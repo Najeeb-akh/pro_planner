@@ -1,7 +1,3 @@
 # ProPlanner
 
-A new Flutter project.
-
-## Getting Started
-
-FlutterFlow projects are built to run on the Flutter _stable_ release.
+A new Flutter project. This is an offline un-official repo for the android project.
