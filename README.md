@@ -52,6 +52,10 @@
 - App settings (preferences)
 
 
+### Najeeb
+- Save calendar events to Firestore
+- Local calendar duplication
+
 
 ---
 
