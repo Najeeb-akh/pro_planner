@@ -42,14 +42,15 @@
 ## Assignments
 
 ### Adam
-- Profile settings
+- App settings (preferences)
 - Navigation drawer implementation
 - Other pages: Support and policy/privacy
 
 ### Mahmoud
 - Floating Action Button (FAB) for adding events
 - Login pages (main login and change password)
-- App settings (preferences)
+- Profile settings
+
 
 
 ### Najeeb
