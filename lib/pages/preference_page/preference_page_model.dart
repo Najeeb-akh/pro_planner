@@ -17,6 +17,10 @@ class PreferencePageModel extends FlutterFlowModel<PreferencePageWidget> {
   bool? switchValue3;
 
   int? reminder;
+  //TimeOfDay? selectedTime;
+  TimeOfDay? startTime;
+  TimeOfDay? endTime;
+
 
   @override
   void initState(BuildContext context) {}
