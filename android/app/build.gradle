@@ -31,7 +31,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.technion.android.proplanner"
+    namespace = namespace = "com.example.pro_planner"
     compileSdk = 34
     ndkVersion = "21.3.6528147"
     
