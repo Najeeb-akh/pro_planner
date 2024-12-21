@@ -26,7 +26,7 @@ void main() async {
         brightness: Brightness.dark,
         /* dark theme settings */
       ),
-      themeMode: ThemeMode.dark, 
+      themeMode: ThemeMode.light, 
       /* ThemeMode.system to follow system theme, 
          ThemeMode.light for light theme, 
          ThemeMode.dark for dark theme
