@@ -39,6 +39,7 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
     _model.switchValue1 = true;
     _model.switchValue2 = true;
     _model.switchValue3 = true;
+    _model.reminder = 60;
   }
 
   @override
@@ -152,7 +153,19 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                               ),
                                         ),
                                         Text(
-                                          'Choose how time is displayed',
+                                          'Choose how time is',
+                                          style: FlutterFlowTheme.of(context)
+                                              .bodySmall
+                                              .override(
+                                                fontFamily: 'Inter',
+                                                color:
+                                                    FlutterFlowTheme.of(context)
+                                                        .secondaryText,
+                                                letterSpacing: 0.0,
+                                              ),
+                                        ),
+                                        Text(
+                                          'displayed',
                                           style: FlutterFlowTheme.of(context)
                                               .bodySmall
                                               .override(
@@ -244,7 +257,19 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                               ),
                                         ),
                                         Text(
-                                          'Set default task reminder time',
+                                          'Set default task reminder',
+                                          style: FlutterFlowTheme.of(context)
+                                              .bodySmall
+                                              .override(
+                                                fontFamily: 'Inter',
+                                                color:
+                                                    FlutterFlowTheme.of(context)
+                                                        .secondaryText,
+                                                letterSpacing: 0.0,
+                                              ),
+                                        ),
+                                        Text(
+                                          'time',
                                           style: FlutterFlowTheme.of(context)
                                               .bodySmall
                                               .override(
@@ -257,46 +282,68 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                         ),
                                       ],
                                     ),
-                                    Container(
-                                      width: 100.0,
-                                      decoration: BoxDecoration(
-                                        color: FlutterFlowTheme.of(context)
-                                            .secondaryBackground,
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                        border: Border.all(
-                                          color: FlutterFlowTheme.of(context)
-                                              .alternate,
-                                          width: 1.0,
-                                        ),
-                                      ),
-                                      child: Padding(
-                                        padding: EdgeInsetsDirectional.fromSTEB(
-                                            8.0, 12.0, 8.0, 12.0),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.max,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              '1 hour',
-                                              style:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .override(
-                                                        fontFamily: 'Inter',
-                                                        letterSpacing: 0.0,
-                                                      ),
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 100.0,
+                                            decoration: BoxDecoration(
+                                              color: FlutterFlowTheme.of(context)
+                                                  .secondaryBackground,
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
+                                              border: Border.all(
+                                                color: FlutterFlowTheme.of(
+                                                        context)
+                                                    .alternate,
+                                                width: 1.0,
+                                              ),
                                             ),
-                                            Icon(
-                                              Icons.arrow_drop_down,
-                                              color:
-                                                  FlutterFlowTheme.of(context)
-                                                      .primaryText,
-                                              size: 24.0,
+                                            child: Padding(
+                                              padding:
+                                                  EdgeInsetsDirectional.fromSTEB(
+                                                      2.0, 8.0, 8.0, 8.0),
+                                              child: DropdownButtonHideUnderline(
+                                                child: DropdownButton<int>(
+                                                  value: _model.reminder,
+                                                  onChanged: (int? newValue) {
+                                                    setState(() {
+                                                      _model.reminder =
+                                                          newValue!;
+                                                    });
+                                                  },
+                                                  items: <int>[10, 30, 60, 1440]
+                                                      .map<DropdownMenuItem<int>>(
+                                                          (int value) {
+                                                    String text;
+                                                    switch (value) {
+                                                      case 10:
+                                                        text = '10\nminutes';
+                                                        break;
+                                                      case 30:
+                                                        text = '30\nminutes';
+                                                        break;
+                                                      case 60:
+                                                        text = '1 hour';
+                                                        break;
+                                                      case 1440:
+                                                        text = '1 day';
+                                                        break;
+                                                      default:
+                                                        text =
+                                                            '$value minutes';
+                                                    }
+                                                    return DropdownMenuItem<int>(
+                                                      value: value,
+                                                      child: Text(text),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ].divide(SizedBox(width: 10.0)),
@@ -368,7 +415,19 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                               ),
                                         ),
                                         Text(
-                                          'Choose your preferred language',
+                                          'Choose your preferred',
+                                          style: FlutterFlowTheme.of(context)
+                                              .bodySmall
+                                              .override(
+                                                fontFamily: 'Inter',
+                                                color:
+                                                    FlutterFlowTheme.of(context)
+                                                        .secondaryText,
+                                                letterSpacing: 0.0,
+                                              ),
+                                        ),
+                                        Text(
+                                          'language',
                                           style: FlutterFlowTheme.of(context)
                                               .bodySmall
                                               .override(
@@ -384,7 +443,7 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                     Padding(
                                       padding: EdgeInsets.all(4.0),
                                       child: Container(
-                                        width: 100.0,
+                                        width: 110.0,
                                         decoration: BoxDecoration(
                                           color: FlutterFlowTheme.of(context)
                                               .secondaryBackground,
@@ -535,42 +594,51 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                               mainAxisSize: MainAxisSize.max,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Container(
-                                  width: 150.0,
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context)
-                                        .secondaryBackground,
-                                    borderRadius: BorderRadius.circular(8.0),
-                                    border: Border.all(
-                                      color: FlutterFlowTheme.of(context)
-                                          .alternate,
-                                      width: 1.0,
+                                // Start Time Field
+                                GestureDetector(
+                                  onTap: () async {
+                                    TimeOfDay? pickedTime = await showTimePicker(
+                                      context: context,
+                                      initialTime: _model.startTime ?? TimeOfDay(hour: 22, minute: 0),
+                                    );
+                                    if (pickedTime != null) {
+                                      setState(() {
+                                        _model.startTime = pickedTime;
+                                      });
+                                    }
+                                  },
+                                  child: Container(
+                                    width: 130.0,
+                                    decoration: BoxDecoration(
+                                      color: FlutterFlowTheme.of(context).secondaryBackground,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                      border: Border.all(
+                                        color: FlutterFlowTheme.of(context).alternate,
+                                        width: 1.0,
+                                      ),
                                     ),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        8.0, 12.0, 8.0, 12.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          '10:00 PM',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Icon(
-                                          Icons.access_time,
-                                          color: FlutterFlowTheme.of(context)
-                                              .primaryText,
-                                          size: 24.0,
-                                        ),
-                                      ],
+                                    child: Padding(
+                                      padding: EdgeInsetsDirectional.fromSTEB(8.0, 8.0, 8.0, 8.0),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.max,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            _model.startTime != null
+                                                ? _model.startTime!.format(context)
+                                                : '10:00 PM',
+                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                  fontFamily: 'Inter',
+                                                  letterSpacing: 0.0,
+                                                ),
+                                          ),
+                                          Icon(
+                                            Icons.access_time,
+                                            color: FlutterFlowTheme.of(context).primaryText,
+                                            size: 24.0,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -583,42 +651,51 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                         letterSpacing: 0.0,
                                       ),
                                 ),
-                                Container(
-                                  width: 150.0,
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context)
-                                        .secondaryBackground,
-                                    borderRadius: BorderRadius.circular(8.0),
-                                    border: Border.all(
-                                      color: FlutterFlowTheme.of(context)
-                                          .alternate,
-                                      width: 1.0,
+                                // End Time Field
+                                GestureDetector(
+                                  onTap: () async {
+                                    TimeOfDay? pickedTime = await showTimePicker(
+                                      context: context,
+                                      initialTime: _model.endTime ?? TimeOfDay(hour: 7, minute: 0),
+                                    );
+                                    if (pickedTime != null) {
+                                      setState(() {
+                                        _model.endTime = pickedTime;
+                                      });
+                                    }
+                                  },
+                                  child: Container(
+                                    width: 130.0,
+                                    decoration: BoxDecoration(
+                                      color: FlutterFlowTheme.of(context).secondaryBackground,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                      border: Border.all(
+                                        color: FlutterFlowTheme.of(context).alternate,
+                                        width: 1.0,
+                                      ),
                                     ),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        8.0, 12.0, 8.0, 12.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          '7:00 AM',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Icon(
-                                          Icons.access_time,
-                                          color: FlutterFlowTheme.of(context)
-                                              .primaryText,
-                                          size: 24.0,
-                                        ),
-                                      ],
+                                    child: Padding(
+                                      padding: EdgeInsetsDirectional.fromSTEB(8.0, 8.0, 8.0, 8.0),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.max,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            _model.endTime != null
+                                                ? _model.endTime!.format(context)
+                                                : '7:00 AM',
+                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                  fontFamily: 'Inter',
+                                                  letterSpacing: 0.0,
+                                                ),
+                                          ),
+                                          Icon(
+                                            Icons.access_time,
+                                            color: FlutterFlowTheme.of(context).primaryText,
+                                            size: 24.0,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -679,7 +756,7 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Scheduled Dark Mode',
+                                          'Start Dark Mode',
                                           style: FlutterFlowTheme.of(context)
                                               .bodyLarge
                                               .override(
@@ -689,7 +766,19 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                               ),
                                         ),
                                         Text(
-                                          'Automatically adjust by dawn & sunrise',
+                                          'Automatically adjust by dawn',
+                                          style: FlutterFlowTheme.of(context)
+                                              .bodySmall
+                                              .override(
+                                                fontFamily: 'Inter',
+                                                color:
+                                                    FlutterFlowTheme.of(context)
+                                                        .secondaryText,
+                                                letterSpacing: 0.0,
+                                              ),
+                                        ),
+                                        Text(
+                                          '& sunrise',
                                           style: FlutterFlowTheme.of(context)
                                               .bodySmall
                                               .override(
