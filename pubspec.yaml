@@ -23,6 +23,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  firebase_database: ^10.0.6
+  
   flutter_localizations:
     sdk: flutter
   flutter_web_plugins:

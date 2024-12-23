@@ -1,10 +1,9 @@
 plugins {
    id "com.android.application"
-   id "kotlin-android"
-   id "dev.flutter.flutter-gradle-plugin"
    id 'com.google.gms.google-services'
-   
-   
+   id "kotlin-android"  
+   id "dev.flutter.flutter-gradle-plugin"
+
 }
 
 def localProperties = new Properties()
@@ -32,17 +31,27 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    compileSdkVersion 34
+    namespace = namespace = "com.example.pro_planner"
+    compileSdk = 34
+    ndkVersion = "21.3.6528147"
     
-
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    lintOptions {
-        disable 'InvalidPackage'
-        checkReleaseBuilds false
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
+
+    // sourceSets {
+    //     main.java.srcDirs += 'src/main/kotlin'
+    // }
+
+    // lintOptions {
+    //     disable 'InvalidPackage'
+    //     checkReleaseBuilds false
+    // }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
@@ -54,14 +63,14 @@ android {
         versionName flutterVersionName
     }
 
-   signingConfigs {
-       release {
-           keyAlias keystoreProperties['keyAlias']
-           keyPassword keystoreProperties['keyPassword']
-           storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-           storePassword keystoreProperties['storePassword']
-       }
-   }
+//    signingConfigs {
+//        release {
+//            keyAlias keystoreProperties['keyAlias']
+//            keyPassword keystoreProperties['keyPassword']
+//            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+//            storePassword keystoreProperties['storePassword']
+//        }
+//    }
 
     buildTypes {
         release {
@@ -76,6 +85,10 @@ flutter {
     source '../..'
 }
 
+
+apply plugin: 'com.google.gms.google-services'
+
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.10"
 }
+

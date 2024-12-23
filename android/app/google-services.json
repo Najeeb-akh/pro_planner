@@ -1,10 +1,30 @@
 {
   "project_info": {
     "project_number": "662156520249",
+    "firebase_url": "https://proplanner-4c98b-default-rtdb.firebaseio.com",
     "project_id": "proplanner-4c98b",
     "storage_bucket": "proplanner-4c98b.firebasestorage.app"
   },
   "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:662156520249:android:ef0d929ab18b16eda196e8",
+        "android_client_info": {
+          "package_name": "com.example.proplanner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsyG5bntnLAXOhUHpoomOAheUapxp5b3E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
     {
       "client_info": {
         "mobilesdk_app_id": "1:662156520249:android:73eb4eefc379a15da196e8",
@@ -21,9 +41,6 @@
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": []
-        },
-        "auth_service": {
-          "status": "ENABLED"
         }
       }
     }
