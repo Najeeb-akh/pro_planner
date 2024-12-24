@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'mainpage_model.dart';
 export 'mainpage_model.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../../theme/theme_notifier.dart';
 
 
 class Event {
@@ -232,7 +233,10 @@ class _MainpageWidgetState extends State<MainpageWidget> {
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            print('FloatingActionButton pressed ...');
+            setState(() {
+              isDarkMode = !isDarkMode;
+            });
+
           },
           backgroundColor: FlutterFlowTheme.of(context).primaryText,
           icon: Icon(
@@ -630,7 +634,9 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                           height: 60.0,
                           decoration: BoxDecoration(),
                         ),
+                        
                       ),
+                        
                     ]
                         .divide(SizedBox(height: 25.0))
                         .around(SizedBox(height: 25.0)),
