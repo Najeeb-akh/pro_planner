@@ -8,6 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'preference_page_model.dart';
 export 'preference_page_model.dart';
+import 'package:pro_planner/theme/theme_notifier.dart';
+import 'package:provider/provider.dart';
 
 class PreferencePageWidget extends StatefulWidget {
   /// The Preferences Page in the ProPlanner app will let users customize key
@@ -555,7 +557,19 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                               ),
                                         ),
                                         Text(
-                                          'Silence notifications during set times',
+                                          'Silence notifications during ',
+                                          style: FlutterFlowTheme.of(context)
+                                              .bodySmall
+                                              .override(
+                                                fontFamily: 'Inter',
+                                                color:
+                                                    FlutterFlowTheme.of(context)
+                                                        .secondaryText,
+                                                letterSpacing: 0.0,
+                                              ),
+                                        ),
+                                         Text(
+                                          'set times',
                                           style: FlutterFlowTheme.of(context)
                                               .bodySmall
                                               .override(
@@ -795,7 +809,9 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
                                       value: _model.switchValue3!,
                                       onChanged: (newValue) async {
                                         safeSetState(() =>
-                                            _model.switchValue3 = newValue!);
+                                            _model.switchValue3 = newValue);
+                                         safeSetState(() =>
+                                            Provider.of<ThemeNotifier>(context, listen: false).toggleTheme());
                                       },
                                       activeColor:
                                           FlutterFlowTheme.of(context).primary,

@@ -10,6 +10,109 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'mainpage_model.dart';
 export 'mainpage_model.dart';
+import 'package:firebase_database/firebase_database.dart';
+import '../../theme/theme_notifier.dart';
+
+
+class Event {
+  final String title;
+  final Color color;
+  final String startTime;
+  final String endTime;
+  final String description;
+  final String location;
+
+  Event({
+    required this.title,
+    required this.color,
+    required this.startTime,
+    required this.endTime,
+    required this.description,
+    required this.location,
+  });
+
+  factory Event.fromMap(Map<dynamic, dynamic> map) {
+    return Event(
+      title: map['title'],
+      color: _getColorFromNumber(map['color']),
+      startTime: map['startTime'],
+      endTime: map['endTime'],
+      description: map['description'],
+      location: map['location'],
+    );
+  }
+
+  static Color _getColorFromNumber(int number) {
+    switch (number) {
+      case 1:
+        return Colors.redAccent;
+      case 2:
+        return Colors.blueAccent;
+      case 3:
+        return Colors.greenAccent;
+      case 4:
+        return Colors.yellowAccent;
+      case 5:
+        return Colors.orangeAccent;
+      default:
+        return Colors.grey;
+    }
+  }
+}
+
+class FadingText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+  final Duration duration;
+
+  const FadingText({
+    required this.text,
+    required this.style,
+    this.duration = const Duration(milliseconds: 1000),
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _FadingTextState createState() => _FadingTextState();
+  }
+
+class _FadingTextState extends State<FadingText> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  late List<Widget> _letters;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _letters = widget.text.split('').map((letter) {
+      return FadeTransition(
+        opacity: _animation,
+        child: Text(letter, style: widget.style),
+      );
+    }).toList();
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: _letters,
+    );
+  }
+}
+
+
+
+
 
 class MainpageWidget extends StatefulWidget {
   /// Description:
@@ -57,13 +160,57 @@ class MainpageWidget extends StatefulWidget {
 class _MainpageWidgetState extends State<MainpageWidget> {
   late MainpageModel _model;
   bool isDarkMode = false;
+  //should be changed to the user id from the firebase auth
+  final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+// support for greetings based on time of the day
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning, Najeeb';
+    } else if (hour < 18) {
+      return 'Good Afternoon, Najeeb';
+    } else {
+      return 'Good Evening, Najeeb';
+    }
+  }
+
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => MainpageModel());
+    _fetchEvents();
+    _selectedDate = DateTime.now(); // Select the current date when the app is loaded
+  }
+
+  void _fetchEvents() {
+    _databaseReference.onValue.listen((event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>;
+      setState(() {
+        _events = data.values.map((e) => Event.fromMap(e)).toList();
+      });
+    });
+  }
+
+  List<Event> _events = [];
+
+  List<Event> _getTodayEvents(_selectedDate) {
+    DateTime now = _selectedDate;
+    return _events.where((event) {
+      DateTime eventDate = DateTime.parse(event.startTime);
+      return eventDate.year == now.year &&
+             eventDate.month == now.month &&
+             eventDate.day == now.day;
+    }).toList();
+  }
+
+  String _formatTime(String time) {
+    DateTime dateTime = DateTime.parse(time);
+    return "${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}";
   }
 
   @override
@@ -73,6 +220,7 @@ class _MainpageWidgetState extends State<MainpageWidget> {
     super.dispose();
   }
 
+  var event_counter = 0;
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -85,7 +233,10 @@ class _MainpageWidgetState extends State<MainpageWidget> {
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            print('FloatingActionButton pressed ...');
+            setState(() {
+              isDarkMode = !isDarkMode;
+            });
+
           },
           backgroundColor: FlutterFlowTheme.of(context).primaryText,
           icon: Icon(
@@ -116,25 +267,38 @@ class _MainpageWidgetState extends State<MainpageWidget> {
         ),
         appBar: PreferredSize(
           preferredSize:
-              Size.fromHeight(MediaQuery.sizeOf(context).height * 0.08),
+              Size.fromHeight(MediaQuery.sizeOf(context).height * 0.1),
           child: AppBar(
             backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
-            iconTheme: IconThemeData(color: Colors.white),
-            automaticallyImplyLeading: false,
+            iconTheme: IconThemeData(color: FlutterFlowTheme.of(context).secondaryBackground),
+            leadingWidth: 90000.0,
+            automaticallyImplyLeading: true,
             leading: Opacity(
-              opacity: 0.9,
+              opacity: 1,
+              
               child: Align(
-                alignment: AlignmentDirectional(-1.0, 0.0),
+                alignment: AlignmentDirectional(1.0, 1.0),
                 child: Row(
-                  mainAxisSize: MainAxisSize.max,
+                  //mainAxisSize: MainAxisSize.max,
                   children: [
-                    wrapWithModel(
-                      model: _model.menuModel,
-                      updateCallback: () => safeSetState(() {}),
-                      child: MenuWidget(),
+                    // wrapWithModel(
+                    //   model: _model.menuModel,
+                    //   updateCallback: () => safeSetState(() {}),
+                    //   child: MenuWidget(),
+                    // ),
+                    IconButton(
+                      onPressed: () {
+                      scaffoldKey.currentState?.openDrawer();
+                    },
+                    icon: Icon(
+                      Icons.menu,
+                      color: FlutterFlowTheme.of(context).primaryText,
+                      size: 24,
                     ),
+                  iconSize: 24,
+                ),
                     Text(
-                      'Good Morning, Najeeb',
+                      _getGreeting(),
                       style:
                           FlutterFlowTheme.of(context).headlineMedium.override(
                                 fontFamily: 'Inter Tight',
@@ -148,395 +312,39 @@ class _MainpageWidgetState extends State<MainpageWidget> {
               ),
             ),
             actions: [
-              Switch(
-                value: isDarkMode,
-                onChanged: (value) {
-                  setState(() {
-                    isDarkMode = value;
-                    if (isDarkMode) {
-                       FlutterFlowTheme.saveThemeMode(ThemeMode.dark);
-                    } else {
-                      FlutterFlowTheme.saveThemeMode(ThemeMode.light);
-                      //FlutterFlowTheme.of(context).setThemeMode(ThemeMode.light);
-                    }
-                  });
-                },
-              ),
+             
             ],
             centerTitle: false,
-            toolbarHeight: MediaQuery.sizeOf(context).height * 0.09,
+            toolbarHeight: MediaQuery.sizeOf(context).height * 0.2,
           ),
         ),
         body: SafeArea(
-          top: true,
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.center,
+          top: false,
+          child: Column(
             children: [
-              Flexible(
+              Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
-                            16.0, 0.0, 16.0, 0.0),
+                        padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
                         child: Container(
                           width: MediaQuery.sizeOf(context).width * 1.0,
                           decoration: BoxDecoration(
-                            color: FlutterFlowTheme.of(context)
-                                .secondaryBackground,
+                            color: FlutterFlowTheme.of(context).secondaryBackground,
                             borderRadius: BorderRadius.circular(16.0),
                           ),
                           child: Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(
-                                16.0, 16.0, 16.0, 16.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'This Week',
-                                  style: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .override(
-                                        fontFamily: 'Inter Tight',
-                                        letterSpacing: 0.0,
-                                      ),
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.max,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Mon',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Container(
-                                          width: 40.0,
-                                          height: 40.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primaryBackground,
-                                            borderRadius:
-                                                BorderRadius.circular(20.0),
-                                          ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                '19',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Tue',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Container(
-                                          width: 40.0,
-                                          height: 40.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primaryBackground,
-                                            borderRadius:
-                                                BorderRadius.circular(20.0),
-                                          ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                '20',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Wed',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Container(
-                                          width: 40.0,
-                                          height: 40.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primary,
-                                            borderRadius:
-                                                BorderRadius.circular(20.0),
-                                          ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                '21',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          color: FlutterFlowTheme
-                                                                  .of(context)
-                                                              .info,
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Thu',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Container(
-                                          width: 40.0,
-                                          height: 40.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primaryBackground,
-                                            borderRadius:
-                                                BorderRadius.circular(20.0),
-                                          ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                '22',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Fri',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Container(
-                                          width: 40.0,
-                                          height: 40.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primaryBackground,
-                                            borderRadius:
-                                                BorderRadius.circular(20.0),
-                                          ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                '23',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Sat',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Container(
-                                          width: 40.0,
-                                          height: 40.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primaryBackground,
-                                            borderRadius:
-                                                BorderRadius.circular(20.0),
-                                          ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                '24',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Sun',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodySmall
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Container(
-                                          width: 40.0,
-                                          height: 40.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primaryBackground,
-                                            borderRadius:
-                                                BorderRadius.circular(20.0),
-                                          ),
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0.0, 0.0),
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                '25',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ].divide(SizedBox(height: 16.0)),
+                            padding: EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 16.0),
+                            child: WeeklyCalendarWidget(
+                              onDateSelected: (date) {
+                                setState(() {
+                                  _selectedDate = date;
+                                });
+                              },
+                              selectedDate: _selectedDate,
                             ),
                           ),
                         ),
@@ -554,269 +362,86 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                           child: Padding(
                             padding: EdgeInsetsDirectional.fromSTEB(
                                 16.0, 16.0, 16.0, 16.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Today\'s Schedule',
-                                  style: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .override(
-                                        fontFamily: 'Inter Tight',
-                                        letterSpacing: 0.0,
-                                      ),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context)
-                                        .primaryBackground,
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        16.0, 16.0, 16.0, 16.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          width: 4.0,
-                                          height: 50.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primary,
-                                            borderRadius:
-                                                BorderRadius.circular(2.0),
-                                          ),
+                            child:  Column(
+                                key: ValueKey(_selectedDate),
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Today\'s Schedule',
+                                    style: FlutterFlowTheme.of(context)
+                                        .headlineSmall
+                                        .override(
+                                          fontFamily: 'Inter Tight',
+                                          letterSpacing: 0.0,
                                         ),
-                                        Expanded(
-                                          child: Column(
+                                  ),
+                                  
+                                  // take the events from the firebase and put inside of the widget
+                                  if (_getTodayEvents(_selectedDate).isEmpty)
+                                    
+                                    Column(
                                             mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                'Team Standup',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyLarge
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                        ),
-                                              ),
-                                              Text(
-                                                '9:00 AM - 9:30 AM',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          color: FlutterFlowTheme
-                                                                  .of(context)
-                                                              .secondaryText,
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
+                                              Padding(padding: EdgeInsetsDirectional.fromSTEB(0.0, 8.0, 0.0, 8.0)),
+                                             
+                                                ShaderMask(
+                                                    shaderCallback: (bounds) => LinearGradient(
+                                                      colors: [Colors.blue, Colors.purple, Colors.amber[700]!],
+                                                      begin: Alignment.topLeft,
+                                                      end: Alignment.bottomRight,
+                                                    ).createShader(bounds),
+                                                    child: Center(
+                                                      child: Column(
+                                                      children: [
+                                                          
+                                                      FadingText(
+                                                      //textAlign: TextAlign.center,
+                                                      text: "You have no events today.",
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontStyle: FontStyle.italic,
+                                                        fontFamily: 'Inter',
+                                                        fontWeight: FontWeight.w500,
+                                                        color: Colors.white, // Acts as a fallback color
+                                                      ),
+                                                    ),
+                                                        FadingText(
+                                                      //textAlign: TextAlign.center,
+                                                      text: "Why not add something to look forward to?",
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontStyle: FontStyle.italic,
+                                                        fontFamily: 'Inter',
+                                                        fontWeight: FontWeight.w500,
+                                                        color: Colors.white, // Acts as a fallback color
+                                                      ),
+                                                    ),
+                                                        
+                                                        ],
+                                                      ),    
+                                                    
+                                                    ),
+                                                  ),
+                                              Padding(padding: EdgeInsetsDirectional.fromSTEB(0.0, 8.0, 0.0, 8.0)),
+                                              
+                                            
                                             ],
                                           ),
+                                  for (var event in _getTodayEvents(_selectedDate)..sort((a, b) => DateTime.parse(a.startTime).compareTo(DateTime.parse(b.startTime)))) 
+                                    EventCardWidget(
+                                          title: event.title,
+                                          color: event.color,
+                                          startTime: event.startTime,
+                                          endTime: event.endTime,
                                         ),
-                                      ].divide(SizedBox(width: 16.0)),
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context)
-                                        .primaryBackground,
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        16.0, 16.0, 16.0, 16.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          width: 4.0,
-                                          height: 50.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .secondary,
-                                            borderRadius:
-                                                BorderRadius.circular(2.0),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Project Review',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyLarge
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                        ),
-                                              ),
-                                              Text(
-                                                '2:00 PM - 3:00 PM',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          color: FlutterFlowTheme
-                                                                  .of(context)
-                                                              .secondaryText,
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ].divide(SizedBox(width: 16.0)),
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context)
-                                        .primaryBackground,
-                                    // image: DecorationImage(
-                                    //   fit: BoxFit.cover,
-                                    //   image: NetworkImage(
-                                    //     'https://media.licdn.com/dms/image/v2/D4D03AQEGrXqgGuaVUA/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1713196199415?e=1740009600&v=beta&t=yMqqcbAM7NyC7vN8-sbY5CLkdRvh-DXA46HMEaIkXWg',
-                                    //   ),
-                                    // ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        16.0, 16.0, 16.0, 16.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          width: 4.0,
-                                          height: 50.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .secondary,
-                                            borderRadius:
-                                                BorderRadius.circular(2.0),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Team Meeting',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyLarge
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                        ),
-                                              ),
-                                              Text(
-                                                '3:00 PM - 4:00 PM',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          color: FlutterFlowTheme
-                                                                  .of(context)
-                                                              .secondaryText,
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ].divide(SizedBox(width: 16.0)),
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context)
-                                        .primaryBackground,
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        16.0, 16.0, 16.0, 16.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Container(
-                                          width: 4.0,
-                                          height: 50.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .tertiary,
-                                            borderRadius:
-                                                BorderRadius.circular(2.0),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Family Dinner ',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyLarge
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                        ),
-                                              ),
-                                              Text(
-                                                '8:00 PM\n',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodySmall
-                                                        .override(
-                                                          fontFamily: 'Inter',
-                                                          color: FlutterFlowTheme
-                                                                  .of(context)
-                                                              .secondaryText,
-                                                          letterSpacing: 0.0,
-                                                        ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ].divide(SizedBox(width: 16.0)),
-                                    ),
-                                  ),
-                                ),
-                              ].divide(SizedBox(height: 16.0)),
+                                  
+                                ].divide(SizedBox(height: 16.0)),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                             16.0, 0.0, 16.0, 0.0),
@@ -834,166 +459,173 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                             primary: false,
                             scrollDirection: Axis.horizontal,
                             children: [
-                              Material(
-                                color: Colors.transparent,
-                                elevation: 2.0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16.0),
-                                ),
-                                child: Container(
-                                  width: 280.0,
-                                  height: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context)
-                                        .secondaryBackground,
-                                    borderRadius: BorderRadius.circular(16.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        16.0, 16.0, 16.0, 16.0),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisSize: MainAxisSize.max,
-                                          children: [
-                                            Icon(
-                                              Icons.fitness_center,
-                                              color:
-                                                  FlutterFlowTheme.of(context)
-                                                      .primary,
-                                              size: 24.0,
-                                            ),
-                                            Text(
-                                              'Fitness Suggestion',
-                                              style:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodySmall
-                                                      .override(
-                                                        fontFamily: 'Inter',
-                                                        color:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .primary,
-                                                        letterSpacing: 0.0,
-                                                      ),
-                                            ),
-                                          ].divide(SizedBox(width: 12.0)),
-                                        ),
-                                        Text(
-                                          'Add gym to your schedule',
-                                          style: FlutterFlowTheme.of(context)
-                                              .headlineSmall
-                                              .override(
-                                                fontFamily: 'Inter Tight',
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Text(
-                                          'You have free time today at 5 PM',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                      ].divide(SizedBox(height: 8.0)),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Material(
-                                color: Colors.transparent,
-                                elevation: 2.0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16.0),
-                                ),
-                                child: Container(
-                                  width: 280.0,
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context)
-                                        .secondaryBackground,
-                                    borderRadius: BorderRadius.circular(16.0),
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        16.0, 16.0, 16.0, 16.0),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisSize: MainAxisSize.max,
-                                          children: [
-                                            Icon(
-                                              Icons.work,
-                                              color:
-                                                  FlutterFlowTheme.of(context)
-                                                      .secondary,
-                                              size: 24.0,
-                                            ),
-                                            Text(
-                                              'Work Suggestion',
-                                              style:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodySmall
-                                                      .override(
-                                                        fontFamily: 'Inter',
-                                                        color:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .secondary,
-                                                        letterSpacing: 0.0,
-                                                      ),
-                                            ),
-                                          ].divide(SizedBox(width: 12.0)),
-                                        ),
-                                        Text(
-                                          'Schedule team meeting',
-                                          style: FlutterFlowTheme.of(context)
-                                              .headlineSmall
-                                              .override(
-                                                fontFamily: 'Inter Tight',
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                        Text(
-                                          'Wednesday afternoon is open',
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                fontFamily: 'Inter',
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                              ),
-                                        ),
-                                      ].divide(SizedBox(height: 8.0)),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ].divide(SizedBox(width: 16.0)),
+                              // suggestion card sprint 2
+                              // Material(
+                              //   color: Colors.transparent,
+                              //   elevation: 2.0,
+                              //   shape: RoundedRectangleBorder(
+                              //     borderRadius: BorderRadius.circular(16.0),
+                              //   ),
+                              //   child: Container(
+                              //     width: 280.0,
+                              //     height: double.infinity,
+                              //     decoration: BoxDecoration(
+                              //       color: FlutterFlowTheme.of(context)
+                              //           .secondaryBackground,
+                              //       borderRadius: BorderRadius.circular(16.0),
+                              //     ),
+                              //     child: Padding(
+                              //       padding: EdgeInsetsDirectional.fromSTEB(
+                              //           16.0, 16.0, 16.0, 16.0),
+                              //       child: Column(
+                              //         mainAxisSize: MainAxisSize.min,
+                              //         mainAxisAlignment:
+                              //             MainAxisAlignment.center,
+                              //         crossAxisAlignment:
+                              //             CrossAxisAlignment.start,
+                              //         children: [
+                              //           Row(
+                              //             mainAxisSize: MainAxisSize.max,
+                              //             children: [
+                              //               Icon(
+                              //                 Icons.fitness_center,
+                              //                 color:
+                              //                     FlutterFlowTheme.of(context)
+                              //                         .primary,
+                              //                 size: 24.0,
+                              //               ),
+                              //               Text(
+                              //                 'Fitness Suggestion',
+                              //                 style:
+                              //                     FlutterFlowTheme.of(context)
+                              //                         .bodySmall
+                              //                         .override(
+                              //                           fontFamily: 'Inter',
+                              //                           color:
+                              //                               FlutterFlowTheme.of(
+                              //                                       context)
+                              //                                   .primary,
+                              //                           letterSpacing: 0.0,
+                              //                         ),
+                              //               ),
+                              //             ].divide(SizedBox(width: 12.0)),
+                              //           ),
+                              //           Text(
+                              //             'Add gym to your schedule',
+                              //             style: FlutterFlowTheme.of(context)
+                              //                 .headlineSmall
+                              //                 .override(
+                              //                   fontFamily: 'Inter Tight',
+                              //                   letterSpacing: 0.0,
+                              //                 ),
+                              //           ),
+                              //           Text(
+                              //             'You have free time today at 5 PM',
+                              //             style: FlutterFlowTheme.of(context)
+                              //                 .bodyMedium
+                              //                 .override(
+                              //                   fontFamily: 'Inter',
+                              //                   color:
+                              //                       FlutterFlowTheme.of(context)
+                              //                           .secondaryText,
+                              //                   letterSpacing: 0.0,
+                              //                 ),
+                              //           ),
+                              //         ].divide(SizedBox(height: 8.0)),
+                              //       ),
+                              //     ),
+                              //   ),
+                              // ),
+                             
+                             //suggestion card sprint 2
+                              // Material(
+                              //   color: Colors.transparent,
+                              //   elevation: 2.0,
+                              //   shape: RoundedRectangleBorder(
+                              //     borderRadius: BorderRadius.circular(16.0),
+                              //   ),
+                              //   child: Container(
+                              //     width: 280.0,
+                              //     decoration: BoxDecoration(
+                              //       color: FlutterFlowTheme.of(context)
+                              //           .secondaryBackground,
+                              //       borderRadius: BorderRadius.circular(16.0),
+                              //     ),
+                              //     child: Padding(
+                              //       padding: EdgeInsetsDirectional.fromSTEB(
+                              //           16.0, 16.0, 16.0, 16.0),
+                              //       child: Column(
+                              //         mainAxisSize: MainAxisSize.min,
+                              //         mainAxisAlignment:
+                              //             MainAxisAlignment.center,
+                              //         crossAxisAlignment:
+                              //             CrossAxisAlignment.start,
+                              //         children: [
+                              //           Row(
+                              //             mainAxisSize: MainAxisSize.max,
+                              //             children: [
+                              //               Icon(
+                              //                 Icons.work,
+                              //                 color:
+                              //                     FlutterFlowTheme.of(context)
+                              //                         .secondary,
+                              //                 size: 24.0,
+                              //               ),
+                              //               Text(
+                              //                 'Work Suggestion',
+                              //                 style:
+                              //                     FlutterFlowTheme.of(context)
+                              //                         .bodySmall
+                              //                         .override(
+                              //                           fontFamily: 'Inter',
+                              //                           color:
+                              //                               FlutterFlowTheme.of(
+                              //                                       context)
+                              //                                   .secondary,
+                              //                           letterSpacing: 0.0,
+                              //                         ),
+                              //               ),
+                              //             ].divide(SizedBox(width: 12.0)),
+                              //           ),
+                              //           Text(
+                              //             'Schedule team meeting',
+                              //             style: FlutterFlowTheme.of(context)
+                              //                 .headlineSmall
+                              //                 .override(
+                              //                   fontFamily: 'Inter Tight',
+                              //                   letterSpacing: 0.0,
+                              //                 ),
+                              //           ),
+                              //           Text(
+                              //             'Wednesday afternoon is open',
+                              //             style: FlutterFlowTheme.of(context)
+                              //                 .bodyMedium
+                              //                 .override(
+                              //                   fontFamily: 'Inter',
+                              //                   color:
+                              //                       FlutterFlowTheme.of(context)
+                              //                           .secondaryText,
+                              //                   letterSpacing: 0.0,
+                              //                 ),
+                              //           ),
+                              //         ].divide(SizedBox(height: 8.0)),
+                              //       ),
+                              //     ),
+                              //   ),
+                              // ),
+                            ]
+                            //.divide(SizedBox(width: 16.0)),
                           ),
                         ),
                       ),
-                      wrapWithModel(
-                        model: _model.generatebyaiModel,
-                        updateCallback: () => safeSetState(() {}),
-                        child: GeneratebyaiWidget(),
-                      ),
+                      
+                      
+                      // generate with ai button sprint 2
+                      // wrapWithModel(
+                      //   model: _model.generatebyaiModel,
+                      //   updateCallback: () => safeSetState(() {}),
+                      //   child: GeneratebyaiWidget(),
+                      // ),
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                             16.0, 0.0, 16.0, 0.0),
@@ -1002,7 +634,9 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                           height: 60.0,
                           decoration: BoxDecoration(),
                         ),
+                        
                       ),
+                        
                     ]
                         .divide(SizedBox(height: 25.0))
                         .around(SizedBox(height: 25.0)),
@@ -1014,5 +648,294 @@ class _MainpageWidgetState extends State<MainpageWidget> {
         ),
       ),
     );
+  }
+}
+
+class WeeklyCalendarWidget extends StatefulWidget {
+  final Function(DateTime) onDateSelected;
+  final DateTime selectedDate;
+
+  const WeeklyCalendarWidget({
+    required this.onDateSelected,
+    required this.selectedDate,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _WeeklyCalendarWidgetState createState() => _WeeklyCalendarWidgetState();
+}
+
+class _WeeklyCalendarWidgetState extends State<WeeklyCalendarWidget> {
+  DateTime _currentWeekStart = _getStartOfWeek(DateTime.now());
+  bool _isSwiping = false;
+
+  static DateTime _getStartOfWeek(DateTime date) {
+    int daysToSubtract = date.weekday % 7;
+    return date.subtract(Duration(days: daysToSubtract));
+  }
+
+  void _goToPreviousWeek() {
+    setState(() {
+      _isSwiping = true;
+      _currentWeekStart = _currentWeekStart.subtract(Duration(days: 7));
+    });
+    Future.delayed(Duration(milliseconds: 300), () {
+      setState(() {
+        _isSwiping = false;
+      });
+    });
+  }
+
+  void _goToNextWeek() {
+    setState(() {
+      _isSwiping = true;
+      _currentWeekStart = _currentWeekStart.add(Duration(days: 7));
+    });
+    Future.delayed(Duration(milliseconds: 300), () {
+      setState(() {
+        _isSwiping = false;
+      });
+    });
+  }
+
+  List<DateTime> _getWeekDates() {
+    return List.generate(7, (index) => _currentWeekStart.add(Duration(days: index)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity! < 0) {
+          _goToNextWeek();
+        } else if (details.primaryVelocity! > 0) {
+          _goToPreviousWeek();
+        }
+      },
+      child: AnimatedOpacity(
+        opacity: _isSwiping ? 0.5 : 1.0,
+        duration: Duration(milliseconds: 300),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  onPressed: _goToPreviousWeek,
+                ),
+                Text(
+                  'Weekly View',
+                  style: FlutterFlowTheme.of(context).headlineSmall.override(
+                    fontFamily: 'Inter Tight',
+                    letterSpacing: 0.0,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward),
+                  onPressed: _goToNextWeek,
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: _getWeekDates().map((date) {
+                return GestureDetector(
+                  onTap: () {
+                    widget.onDateSelected(date);
+                  },
+                  child: Column(
+                    children: [
+                      Text(
+                        ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.weekday % 7],
+                        style: FlutterFlowTheme.of(context).bodySmall.override(
+                          fontFamily: 'Inter',
+                          color: FlutterFlowTheme.of(context).secondaryText,
+                          letterSpacing: 0.0,
+                        ),
+                      ),
+                      Container(
+                        width: 40.0,
+                        height: 40.0,
+                        decoration: BoxDecoration(
+                          color: date == widget.selectedDate
+                              ? FlutterFlowTheme.of(context).primary
+                              : FlutterFlowTheme.of(context).primaryBackground,
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                        child: Center(
+                          child: Text(
+                            date.day.toString(),
+                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                              fontFamily: 'Inter',
+                              color: date == widget.selectedDate
+                                  ? FlutterFlowTheme.of(context).info
+                                  : FlutterFlowTheme.of(context).primaryText,
+                              letterSpacing: 0.0,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class EventList extends StatefulWidget {
+  final List<Event> events; // Use Event class instead of Map<String, dynamic>
+
+  const EventList({Key? key, required this.events}) : super(key: key);
+
+  @override
+  _EventListState createState() => _EventListState();
+}
+
+class _EventListState extends State<EventList> with TickerProviderStateMixin {
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Adding events one by one with a delay
+    Future.delayed(Duration.zero, () async {
+      for (int i = 0; i < widget.events.length; i++) {
+        await Future.delayed(Duration(milliseconds: 300));
+        _listKey.currentState?.insertItem(i);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedList(
+      key: _listKey,
+      initialItemCount: 0, // Initially, the list is empty; items are added dynamically
+      itemBuilder: (context, index, animation) {
+        final event = widget.events[index];
+        return _buildAnimatedCard(event, animation);
+      },
+    );
+  }
+
+  Widget _buildAnimatedCard(Event event, Animation<double> animation) {
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: Offset(-1, 0), // Slide in from the left
+        end: Offset(0, 0),    // Final position
+      ).animate(animation),
+      child: FadeTransition(
+        opacity: animation,
+        child: EventCardWidget(
+          title: event.title,
+          color: event.color,
+          startTime: event.startTime,
+          endTime: event.endTime,
+        ),
+      ),
+    );
+  }
+}
+
+
+class EventCardWidget extends StatelessWidget {
+  final String title;
+  final Color color;
+  final String startTime;
+  final String endTime;
+
+  const EventCardWidget({
+    Key? key,
+    required this.title,
+    required this.color,
+    required this.startTime,
+    required this.endTime,
+  }) : super(key: key);
+
+  String _formatTime(String time) {
+    final dateTime = DateTime.parse(time);
+    return "${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AnimationController _controller = AnimationController(
+      vsync: Scaffold.of(context), // Ensure context has a TickerProvider
+      duration: Duration(milliseconds: 900),
+    );
+
+    final Animation<double> _fadeAnimation = Tween<double>(
+      begin: 0.1,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    // Start the animation when the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.forward();
+    });
+
+    bool isStartTimeAM = DateTime.parse(startTime).hour < 12;
+    bool isEndTimeAM = DateTime.parse(endTime).hour < 12;
+
+    return FadeTransition(
+        opacity: _fadeAnimation,
+        child: Container(
+          decoration: BoxDecoration(
+      color: FlutterFlowTheme.of(context).primaryBackground,
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          child: Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 16.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Container(
+                  width: 4.0,
+                  height: 50.0,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(2.0),
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                style: FlutterFlowTheme.of(context).bodyLarge.override(
+                  fontFamily: 'Inter',
+                  letterSpacing: 0.0,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      Text(
+                isStartTimeAM && isEndTimeAM ? '${_formatTime(startTime)} AM - ${_formatTime(endTime)} AM ': 
+                        !isStartTimeAM && isEndTimeAM ? '${_formatTime(startTime)} PM - ${_formatTime(endTime)} AM ':
+                          isStartTimeAM && !isEndTimeAM ? '${_formatTime(startTime)} AM - ${_formatTime(endTime)} PM ': 
+                            '${_formatTime(startTime)} PM - ${_formatTime(endTime)} PM ',
+                style: FlutterFlowTheme.of(context).bodySmall.override(
+                  fontFamily: 'Inter',
+                  color: FlutterFlowTheme.of(context).secondaryText,
+                  letterSpacing: 0.0,
+                ),
+                      ),
+                    ],
+                  ),
+                ),
+              ].divide(SizedBox(width: 16.0)),
+            ),
+          ),
+        ),
+      );
   }
 }
