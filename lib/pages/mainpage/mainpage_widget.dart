@@ -621,11 +621,11 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                       
                       
                       // generate with ai button sprint 2
-                      // wrapWithModel(
-                      //   model: _model.generatebyaiModel,
-                      //   updateCallback: () => safeSetState(() {}),
-                      //   child: GeneratebyaiWidget(),
-                      // ),
+                      wrapWithModel(
+                        model: _model.generatebyaiModel,
+                        updateCallback: () => safeSetState(() {}),
+                        child: GeneratebyaiWidget(),
+                      ),
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                             16.0, 0.0, 16.0, 0.0),
