@@ -41,6 +41,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
   final ScrollController _scrollController = ScrollController();
   final List<ChatBubbleWidget> _messages = [];
   final model = FirebaseVertexAI.instance.generativeModel(model: 'gemini-1.5-flash-001');
+  final ValueNotifier<bool> _messageNotifier = ValueNotifier(false);
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -59,6 +60,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     _model.dispose();
     _scrollController.dispose();
+    _messageNotifier.dispose();
 
     super.dispose();
   }
@@ -98,6 +100,8 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
           curve: Curves.easeOut,
         );
       });
+
+      _messageNotifier.value = true;
 
       final response = await model.generateContent(
         [Content.text(userMessage)],
@@ -329,121 +333,91 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
                       
                         // chat bubbles
                         Expanded(
-                          child: SingleChildScrollView(
-                            controller: _scrollController,
-                            child: Column(
+                          child: ValueListenableBuilder<bool>(
+                          valueListenable: _messageNotifier,
+                          builder: (context, value, child) {
+                            return Column(
                               children: [
-                                Container(
-                                  height: MediaQuery.sizeOf(context).height * 0.55,
-                                  child: 
-                                  ListView(
-                                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 16.0, 0.0, 16.0),
-                                  children: _messages,
-                                  
-                                  ),
-                                  
-                                  ),
-                                
-                                // this is the input box
-                                Align(
-                                alignment: AlignmentDirectional(0.0, 0.0),
-                                child: Container(
-                                  width: MediaQuery.sizeOf(context).width * 1.0,
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context)
-                                        .secondaryBackground,
-                                    borderRadius: BorderRadius.circular(10.0),
-                                    shape: BoxShape.rectangle,
-                                  ),
-                                  child: Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        8.0, 16.0, 8.0, 16.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Expanded(
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color: FlutterFlowTheme.of(context)
-                                                  .primaryBackground,
-                                              borderRadius:
-                                                  BorderRadius.circular(30.0),
-                                            ),
-                                            child: Align(
-                                              alignment:
-                                                  AlignmentDirectional(0.0, 0.0),
-                                              child: Container(
-                                                width: double.infinity,
-                                                child: TextFormField(
-                                                  controller: _model.textController,
-                                                  focusNode:
-                                                      _model.textFieldFocusNode,
-                                                  autofocus: false,
-                                                  obscureText: false,
-                                                  decoration: InputDecoration(
-                                                    hintText:
-                                                        'Type your message...',
-                                                    hintStyle:
-                                                        FlutterFlowTheme.of(context)
-                                                            .bodyMedium
-                                                            .override(
-                                                              fontFamily: 'Inter',
-                                                              letterSpacing: 0.0,
-                                                            ),
-                                                    enabledBorder: InputBorder.none,
-                                                    focusedBorder: InputBorder.none,
-                                                    errorBorder: InputBorder.none,
-                                                    focusedErrorBorder:
-                                                        InputBorder.none,
-                                                  ),
-                                                  style:
-                                                      FlutterFlowTheme.of(context)
-                                                          .bodyMedium
-                                                          .override(
-                                                            fontFamily: 'Inter',
-                                                            letterSpacing: 0.0,
-                                                          ),
-                                                  textAlign: TextAlign.center,
-                                                  minLines: 1,
-                                                  validator: _model
-                                                      .textControllerValidator
-                                                      .asValidator(context),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Container(
-                                          width: 45.0,
-                                          height: 45.0,
-                                          decoration: BoxDecoration(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primary,
-                                            borderRadius:
-                                                BorderRadius.circular(22.0),
-                                          ),
-                                          child: _isLoading
-                                              ? CircularProgressIndicator(
-                                                  color: FlutterFlowTheme.of(context).info,
-                                                )
-                                              : IconButton(
-                                                  icon: Icon(
-                                                    Icons.send,
-                                                    color: FlutterFlowTheme.of(context).info,
-                                                    size: 24.0,
-                                                  ),
-                                                  onPressed: _sendMessage,
-                                                ),
-                                        ),
-                                      ].divide(SizedBox(width: 16.0)),
-                                    ),
+                                // Chat messages section
+                                Expanded(
+                                  child: ListView.builder(
+                                    controller: _scrollController,
+                                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                    itemCount: _messages.length,
+                                    itemBuilder: (context, index) {
+                                      return _messages[index]; // Assuming `_messages` contains widgets
+                                    },
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
+                                
+                                // Input box section
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+                                  color: FlutterFlowTheme.of(context).secondaryBackground,
+                                  child: Row(
+                                    children: [
+                                      // Text field
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: FlutterFlowTheme.of(context).primaryBackground,
+                                            borderRadius: BorderRadius.circular(30.0),
+                                          ),
+                                          child: TextFormField(
+                                            controller: _model.textController,
+                                            focusNode: _model.textFieldFocusNode,
+                                            autofocus: false,
+                                            decoration: InputDecoration(
+                                              hintText: 'Type your message...',
+                                              hintStyle: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                    fontFamily: 'Inter',
+                                                  ),
+                                              border: InputBorder.none,
+                                              contentPadding: const EdgeInsets.symmetric(
+                                                  horizontal: 16.0, vertical: 12.0),
+                                            ),
+                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                  fontFamily: 'Inter',
+                                                ),
+                                            textAlign: TextAlign.start,
+                                            minLines: 1,
+                                            maxLines: 4, // Allow multiple lines if needed
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Send button
+                                      const SizedBox(width: 8.0),
+                                      Container(
+                                        width: 45.0,
+                                        height: 45.0,
+                                        decoration: BoxDecoration(
+                                          color: FlutterFlowTheme.of(context).primary,
+                                          borderRadius: BorderRadius.circular(22.0),
+                                        ),
+                                        child: _isLoading
+                                            ? CircularProgressIndicator(
+                                                color: FlutterFlowTheme.of(context).info,
+                                              )
+                                            : IconButton(
+                                                icon: Icon(
+                                                  Icons.send,
+                                                  color: FlutterFlowTheme.of(context).info,
+                                                  size: 24.0,
+                                                ),
+                                                onPressed: _sendMessage,
+                                              ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
-                      ),
+
+                        ),
+                  
                     ],
                   ),
                 ),
