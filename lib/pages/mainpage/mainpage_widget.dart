@@ -157,6 +157,7 @@ class MainpageWidget extends StatefulWidget {
   State<MainpageWidget> createState() => _MainpageWidgetState();
 }
 
+
 class _MainpageWidgetState extends State<MainpageWidget> {
   late MainpageModel _model;
   bool isDarkMode = false;
@@ -166,16 +167,7 @@ class _MainpageWidgetState extends State<MainpageWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
 // support for greetings based on time of the day
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good Morning, Najeeb';
-    } else if (hour < 18) {
-      return 'Good Afternoon, Najeeb';
-    } else {
-      return 'Good Evening, Najeeb';
-    }
-  }
+  
 
   DateTime _selectedDate = DateTime.now();
 
@@ -620,12 +612,12 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                       ),
                       
                       
-                      // generate with ai button sprint 2
-                      // wrapWithModel(
-                      //   model: _model.generatebyaiModel,
-                      //   updateCallback: () => safeSetState(() {}),
-                      //   child: GeneratebyaiWidget(),
-                      // ),
+                      //generate with ai button sprint 2
+                      wrapWithModel(
+                        model: _model.generatebyaiModel,
+                        updateCallback: () => safeSetState(() {}),
+                        child: GeneratebyaiWidget(),
+                      ),
                       Padding(
                         padding: EdgeInsetsDirectional.fromSTEB(
                             16.0, 0.0, 16.0, 0.0),
@@ -788,7 +780,17 @@ class _WeeklyCalendarWidgetState extends State<WeeklyCalendarWidget> {
   }
 }
 
-
+String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning, Najeeb';
+    } else if (hour < 18) {
+      return 'Good Afternoon, Najeeb';
+    } else {
+      return 'Good Evening, Najeeb';
+    }
+  }
+  
 class EventList extends StatefulWidget {
   final List<Event> events; // Use Event class instead of Map<String, dynamic>
 
