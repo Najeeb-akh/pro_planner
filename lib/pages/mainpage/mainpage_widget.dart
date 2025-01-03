@@ -13,6 +13,7 @@ export 'mainpage_model.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../theme/theme_notifier.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 
 class Event {
@@ -172,10 +173,66 @@ class _MainpageWidgetState extends State<MainpageWidget> {
 
   DateTime _selectedDate = DateTime.now();
   bool _isPopupVisible = false;
+  bool _isFabVisible = true;
+  String _eventTitle = ''; 
+  String _eventGuests = ''; 
+  String _eventLocation = ''; 
+  String _eventDescription = '';
+  String _eventStartTime = ''; 
+  String _eventEndTime = ''; 
+  Color selectedColor = Colors.blue;
+  
+  /// Adds a new event with the specified details and saves it to the events list.
+  ///
+  /// This function handles the creation of a new event by generating necessary 
+  /// IDs or data structures, then stores the result in the persistent data layer.
+  /// Use this function in contexts where a fresh event is required to capture 
+  /// user actions or system-triggered occurrences.
+  ///
+  /// Returns 1 if the event name is empty.
+  /// Returns 2 if the event location is empty.
+  /// Returns 3 if the event description is empty.
+  /// returns 4 if the start time is after the end time.
+  /// returns 5 if the start time or end time is empty.
+  /// Returns 10 if the event is successfully added.  
+
+  int _addNewEvent(String eventName, DateTime startTime, DateTime endTime, String location, String description) {
+    // Check if any parameter is empty
+    if (eventName.isEmpty)
+      return 1;
+    if (location.isEmpty)
+      return 2;
+    if (description.isEmpty)
+      return 3;
+    if (startTime.isAfter(endTime))
+      return 4;
+    if(startTime.toIso8601String() == "" || endTime.toIso8601String() == "")
+      return 5;
+
+
+    // Save the new event in Firebase Realtime Database
+    final DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
+    databaseReference.push().set({
+      'eventName': eventName,
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
+      'location': location,
+      'description': _eventDescription,
+    });
+
+    return 10;
+  }
 
   void _togglePopup() {
+    _eventTitle = '';
+    _eventGuests = '';
+    _eventLocation = '';
+    _eventDescription = '';
+    _eventStartTime = '';
+    _eventEndTime = '';
     setState(() {
       _isPopupVisible = !_isPopupVisible;
+      _isFabVisible = !_isPopupVisible; // Add this line
     });
   }
 
@@ -195,14 +252,25 @@ class _MainpageWidgetState extends State<MainpageWidget> {
       });
   }
 
-  Future<void> selectTime(BuildContext context) async {
+  Future<void> selectStartTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: selectedTime,
     );
     if (picked != null && picked != selectedTime)
       setState(() {
-        selectedTime = picked;
+        _eventStartTime = picked.format(context); // Add this line
+      });
+  }
+
+  Future<void> selectEndTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime,
+    );
+    if (picked != null && picked != selectedTime)
+      setState(() {
+        _eventEndTime = picked.format(context); // Add this line
       });
   }
 
@@ -246,6 +314,82 @@ class _MainpageWidgetState extends State<MainpageWidget> {
 
     super.dispose();
   }
+  
+  //   void _showColorPicker(BuildContext context) {
+  //   final List<Color> colors = [
+  //     Colors.red,
+  //     Colors.green,
+  //     Colors.blue,
+  //     Colors.orange,
+  //     Colors.purple,
+  //     Colors.yellow,
+  //   ];
+
+  //   showModalBottomSheet(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return GridView.builder(
+  //         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+  //           crossAxisCount: 4,
+  //           crossAxisSpacing: 8,
+  //           mainAxisSpacing: 8,
+  //         ),
+  //         itemCount: colors.length,
+  //         padding: EdgeInsets.all(16.0),
+  //         itemBuilder: (BuildContext context, int index) {
+  //           return GestureDetector(
+  //             onTap: () {
+  //               setState(() {
+  //                 selectedColor = colors[index];
+  //               });
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: Container(
+  //               decoration: BoxDecoration(
+  //                 color: colors[index],
+  //                 shape: BoxShape.circle,
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
+
+  void _showColorPicker(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Pick a Color"),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: selectedColor,
+            onColorChanged: (color) {
+              setState(() {
+                selectedColor = color;
+              });
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: Text("Cancel"),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          ElevatedButton(
+            child: Text("Select"),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+
 
   var event_counter = 0;
   @override
@@ -259,24 +403,35 @@ class _MainpageWidgetState extends State<MainpageWidget> {
         key: scaffoldKey,
         
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _togglePopup,
-          backgroundColor: FlutterFlowTheme.of(context).primaryText,
-          icon: Icon(
-            Icons.more_time_rounded,
-            color: FlutterFlowTheme.of(context).primaryBackground,
-            size: 25.0,
-          ),
-          elevation: 8.0,
-          label: Text(
-            'Add Event',
-            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                  fontFamily: 'Inter',
-                  color: FlutterFlowTheme.of(context).alternate,
-                  letterSpacing: 0.0,
+        floatingActionButton: _isFabVisible // Modify this line
+            ? FloatingActionButton.extended(
+                onPressed: _togglePopup,
+                backgroundColor: FlutterFlowTheme.of(context).primaryText,
+                icon: Icon(
+                  Icons.more_time_rounded,
+                  color: FlutterFlowTheme.of(context).primaryBackground,
+                  size: 25.0,
                 ),
-          ),
-        ),
+                elevation: 8.0,
+                label: Text(
+                  'Add Event',
+                  style: FlutterFlowTheme.of(context).bodyMedium.override(
+                        fontFamily: 'Inter',
+                        color: FlutterFlowTheme.of(context).alternate,
+                        letterSpacing: 0.0,
+                      ),
+                ),
+              )
+            : FloatingActionButton(
+                onPressed: null,
+                backgroundColor: FlutterFlowTheme.of(context).primaryText,
+                child: Icon(
+                  Icons.more_time_rounded,
+                  color: FlutterFlowTheme.of(context).primaryBackground,
+                  size: 25.0,
+                ),
+                elevation: 8.0,
+              ), // Add this line
         drawer: Drawer(
           elevation: 16.0,
           child: Align(
@@ -671,117 +826,350 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                 ],
               ),
             ),
-            if (_isPopupVisible)
               if (_isPopupVisible)
                 GestureDetector(
                   onTap: _togglePopup,
                   child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withOpacity(0.2)
-                        : Colors.black.withOpacity(0.2),
+                    //width: MediaQuery.of(context).size.width,
+                    //height: MediaQuery.of(context).size.height,
+                    color: Theme.of(context).brightness != Brightness.dark 
+                        ? Colors.black.withOpacity(0.6)
+                        :Colors.white.withOpacity(0.6),
                     child: 
                     Padding(padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 70.0),
                     child: 
                     Align(
                       alignment: Alignment.bottomCenter,
-                      heightFactor: 0.8,
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height * 0.7,
-                        margin: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 16.0),
-                        decoration: BoxDecoration(
-                          color: FlutterFlowTheme.of(context).primaryBackground,
-                          borderRadius: BorderRadius.circular(16.0),
-                        ),
+                      //heightFactor: 0.8,
+                      child: 
+                        Container(
+                        width: MediaQuery.of(context).size.width* 0.95,
+                        height: MediaQuery.of(context).size.height *0.7,
                         child: _buildPopupCard(),
+                        ),
                       ),
+                      
                     ),
                     ),
                   ),
-                )],
+        
+                ],
+                 
         ),
       ),
     );
   }
 
+
+
   Widget _buildPopupCard() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return 
-    
+    SingleChildScrollView(
+      child: 
     Card(
-      margin: EdgeInsetsDirectional.fromSTEB(16.0, 24.0, 16.0, 8.0),
+      color: isDarkMode ? Colors.white: Colors.grey[900],
+      //margin: EdgeInsetsDirectional.fromSTEB(16.0, 24.0, 16.0, 8.0),
       child: Padding(
-        padding:EdgeInsetsDirectional.fromSTEB(16.0, 24.0, 16.0, 8.0),
+        padding: EdgeInsetsDirectional.fromSTEB(16.0, 24.0, 16.0, 8.0),
         child: Column(
           //mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'Add New Event',
-              style: FlutterFlowTheme.of(context).headlineSmall,
+              style: TextStyle( 
+                color: !isDarkMode ? Colors.white : Colors.black,
+                fontSize: 25.0,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Inter',
+
+              ),
+              
+              
             ),
             SizedBox(height: 12.0),
-            TextField(
+            
+            SizedBox(
+              height: 40,
+              child:
+              TextField(
+              
               decoration: InputDecoration(
                 labelText: 'Event Title',
-                border: OutlineInputBorder(),
+                floatingLabelBehavior: FloatingLabelBehavior.auto,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                labelStyle: TextStyle(color: !isDarkMode ? Colors.white : Colors.grey[800]),
               ),
+              style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+              onChanged: (value) {
+                setState(() {
+                  _eventTitle = value; // Add this line
+                });
+              },
             ),
-            SizedBox(height: 8.0),
+            
+            ),
+            SizedBox(height: 20.0),
+          
             ListTile(
-              title: Text("Date: ${selectedDate.toLocal()}".split(' ')[0]),
-              trailing: Icon(Icons.calendar_today),
+              title: Text(
+                "Date: ${selectedDate.toLocal()}".split(' ')[0],
+                style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+              ),
+              trailing: Icon(Icons.calendar_today, color: !isDarkMode ? Colors.white : Colors.black),
               onTap: () => selectDate(context),
             ),
-            ListTile(
-              title: Text("Time: ${selectedTime.format(context)}"),
-              trailing: Icon(Icons.access_time),
-              onTap: () => selectTime(context),
-            ),
-            SizedBox(height: 8.0),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Add Guests',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 8.0),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Add Location',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 8.0),
-            TextField(
 
-              decoration: InputDecoration(
-                labelText: 'Add Description or Attachment',
-                border: OutlineInputBorder(),
+            SizedBox(height: 12.0),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          "Start Time: $_eventStartTime",
+                          style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.schedule, color: !isDarkMode ? Colors.white : Colors.black),
+                          onPressed: () => selectStartTime(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 12.0),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          "End Time: $_eventEndTime",
+                          style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.timer_off, color: !isDarkMode ? Colors.white : Colors.black),
+                          onPressed: () => selectEndTime(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              maxLines: 2,
+            
+            
+            SizedBox(height: 12.0),
+             Row(
+                children: [
+                  Expanded(
+                    child: 
+                     SizedBox(
+                    height: 40,
+                    child:
+                      TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Add Guests - Not Implemented Yet',
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                        labelStyle: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                      ),
+                      style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                      onChanged: (value) {
+                        setState(() {
+                          _eventGuests = value; // Add this line
+                        });
+                      },
+                    ),
+                     ),
+                  ),
+                  SizedBox(width: 12.0),
+                  Icon(Icons.group, color: !isDarkMode ? Colors.white : Colors.black),
+                ],
+              ),
+            SizedBox(height: 12.0),
+             Row(
+                children: [
+                  Expanded(
+                    child: 
+                     SizedBox(
+                    height: 40,
+                    child:
+                      TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Add Location',
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                        labelStyle: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                      ),
+                      style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                      onChanged: (value) {
+                        setState(() {
+                          _eventLocation = value; // Add this line
+                        });
+                      },
+                    ),
+                     ),
+                  ),
+                  SizedBox(width: 12.0),
+                  Icon(Icons.location_pin, color: !isDarkMode ? Colors.white : Colors.black),
+                ],
+              ),
+
+
+            SizedBox(height: 12.0),
+             SizedBox(
+              height: 80,
+              child:
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Add Description or Attachment',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                    labelStyle: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                  ),
+                  style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                  maxLines: 2,
+                  onChanged: (value) {
+                    setState(() {
+                      _eventDescription = value; // Add this line
+                    });
+                  },
+                  ),
+              ),
+            SizedBox(height: 15.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.brush, color: !isDarkMode ? Colors.white : Colors.black),
+                  onPressed: () => _showColorPicker(context),
+                ),
+                //SizedBox(width: 5),
+                 Text(
+                  'Choose Color:',
+                  style: TextStyle(
+                    color: !isDarkMode ? Colors.white : Colors.black,
+                    fontSize: 16,
+                  ),
+                ),
+                // Circle displaying selected color
+                
+                SizedBox(width: 30),
+                // Paintbrush icon
+                
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: selectedColor, // The color chosen by the user
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey, width: 1),
+                  ),
+                ),
+                // Label
+               
+              ],
             ),
-            SizedBox(height: 8.0),
+SizedBox(height: 15.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
                     onPressed: _togglePopup,
-                  child: Text("Cancel"),
+                  child: Text("Cancel", style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black)),
                 ),
-                SizedBox(width: 8.0),
+                SizedBox(width: 10.0),
                 ElevatedButton(
-                  onPressed:  _togglePopup,
-                  child: Text("Save"),
+                  onPressed: () {
+                    // Parse times (adjust as needed for your time format).
+                    final timeFormat = TimeOfDayFormat.H_colon_mm;
+                    final now = DateTime.now();
+                    TimeOfDay parseToTimeOfDay(String timeStr) {
+                      // Basic split by space or handle 24-hour time accordingly.
+                      // This example assumes "HH:MM" with optional AM/PM. 
+                      // Adjust for your specific time format.
+                      final parts = timeStr.split(' ');
+                      final hhmm = parts[0].split(':');
+                      int hour = int.tryParse(hhmm[0]) ?? 0;
+                      final minute = int.tryParse(hhmm[1]) ?? 0;
+                      final meridian = parts.length > 1 ? parts[1].toLowerCase() : '';
+                      if (meridian == 'pm' && hour < 12) hour += 12;
+                      if (meridian == 'am' && hour == 12) hour = 0;
+                      return TimeOfDay(hour: hour, minute: minute);
+                    }
+
+                    // Build full start/end DateTime from selected date + chosen times
+                    final startTimeOfDay = parseToTimeOfDay(_eventStartTime);
+                    final endTimeOfDay = parseToTimeOfDay(_eventEndTime);
+                    final startDateTime = DateTime(
+                      selectedDate.year,
+                      selectedDate.month,
+                      selectedDate.day,
+                      startTimeOfDay.hour,
+                      startTimeOfDay.minute,
+                    );
+                    final endDateTime = DateTime(
+                      selectedDate.year,
+                      selectedDate.month,
+                      selectedDate.day,
+                      endTimeOfDay.hour,
+                      endTimeOfDay.minute,
+                    );
+
+                    final result = _addNewEvent(
+                      _eventTitle.trim(),
+                      startDateTime,
+                      endDateTime,
+                      _eventLocation.trim(),
+                      _eventDescription.trim(),
+                    );
+
+                    String message;
+                    switch (result) {
+                      case 1:
+                        message = 'Event name is empty!';
+                        break;
+                      case 2:
+                        message = 'Event location is empty!';
+                        break;
+                      case 3:
+                        message = 'Event description is empty!';
+                        break;
+                      case 4:
+                        message = 'Start time can\'t be after end time!';
+                        break;
+                      case 5:
+                        message = 'Start or end time is empty!';
+                        break;
+                      case 10:
+                        // clear back all the field
+                        
+                        message = 'Event Added Successfully!';
+                        _togglePopup(); // If you prefer closing the popup on success
+                        break;
+                      default:
+                        message = 'Unknown error!';
+                        break;
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: !isDarkMode ? Colors.grey[800] : Colors.blue,
+                  ),
+                  child: Text("Save", style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
                 ),
               ],
             ),
           ],
         ),
       ),
+    )
     );
   }
 }
+
+
+
 
 class WeeklyCalendarWidget extends StatefulWidget {
   final Function(DateTime) onDateSelected;
