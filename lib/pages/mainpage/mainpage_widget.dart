@@ -766,12 +766,12 @@ class _MainpageWidgetState extends State<MainpageWidget> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                    onPressed: _togglePopup,
                   child: Text("Cancel"),
                 ),
                 SizedBox(width: 8.0),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed:  _togglePopup,
                   child: Text("Save"),
                 ),
               ],
