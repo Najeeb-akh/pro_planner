@@ -195,8 +195,8 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
           child: Container(
             width: MediaQuery.sizeOf(context).width * 1.0,
             height: _isKeyboardVisible
-                ? MediaQuery.sizeOf(context).height * 0.7
-                : MediaQuery.sizeOf(context).height * 1.0,
+                ? MediaQuery.sizeOf(context).height *0.5
+                : MediaQuery.sizeOf(context).height * 0.86,
             child: SafeArea(
               top: false,
               child: Align(
