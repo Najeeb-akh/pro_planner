@@ -12,6 +12,7 @@ export 'chatbot_model.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:firebase_database/firebase_database.dart';
+//import mainpage_model.dart;
 import 'package:pro_planner/pages/mainpage/mainpage_model.dart';
 
 class ChatbotWidget extends StatefulWidget {
@@ -24,14 +25,13 @@ class ChatbotWidget extends StatefulWidget {
   State<ChatbotWidget> createState() => _ChatbotWidgetState();
 }
 String _getGreeting() {
-  
     final hour = DateTime.now().hour;
     if (hour < 12) {
-      return 'Good Morning\nadam';
+      return 'Good Morning, Najeeb';
     } else if (hour < 18) {
-      return 'Good Afternoon\nadam';
+      return 'Good Afternoon, Najeeb';
     } else {
-      return 'Good Evening\nadam';
+      return 'Good Evening, Najeeb';
     }
   }
 
@@ -43,30 +43,20 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
   final List<ChatBubbleWidget> _messages = [];
   final model = FirebaseVertexAI.instance.generativeModel(model: 'gemini-1.5-flash-001');
   final ValueNotifier<bool> _messageNotifier = ValueNotifier(false);
+
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
+  final _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _model = createModel(context, () => ChatbotModel());
-    _fetchEvents();
+
     _model.textController ??= TextEditingController();
     _model.textFieldFocusNode ??= FocusNode();
   }
-  //Fetch schedules from Firebase based on the query
-    List<Event> _events = [];
-  void _fetchEvents() {
-    _databaseReference.onValue.listen((event) {
-      // Get the data from the event snapshot and cast it to a Map
-      final data = event.snapshot.value as Map<dynamic, dynamic>;
-      // Update the state with the new list of events
-      setState(() {
-        // Map each entry in the data to an Event object and convert to a list
-        _events = data.values.map((e) => Event.fromMap(e)).toList();
-      });
-    });
-  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -90,18 +80,6 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
       }
     });
   }
-  Future<String> _firstResponse() async {
-      final response = await model.generateContent(
-          [Content.text("hi my name is adam")],
-        );
-        final responseText = response.text ?? '';
-        // _messages.add(ChatBubbleWidget(
-        //   isAi: false,
-        //   title: 'for testing',
-        //   message: responseText,
-        // ));
-        return responseText;
-    }
 
   void _sendMessage() async {
   if (_model.textController!.text.isNotEmpty) {
@@ -129,33 +107,24 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
         curve: Curves.easeOut,
       );
     });
-       // Listen for changes in the database reference
+    //Fetch schedules from Firebase based on the query
+    List<Event> _events = [];
+     
+      _databaseReference.onValue.listen((event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>;
+      setState(() {
+        _events = data.values.map((e) => Event.fromMap(e)).toList();
+      });
+    });
       
-    // Convert `_events` to a string with all event details
-    // Map each event in the _events list to a formatted string
-    final eventsString = _events.map((e) {
-      // Return a formatted string for each event
-      return '''
-      Title: ${e.title}
-      Description: ${e.description}
-      Start Time: ${e.startTime}
-      End Time: ${e.endTime}
-      Location: ${e.location}
-      ''';
-      // Join all the formatted strings with two newlines between each event
-    }).join('\n\n');
-    String messageTOrespons="start answering :"+userMessage+".if you need more detales for the answer take a look in my events , Here is my upcoming events, from schedule calendar "+eventsString;
+    String messageTOrespons="Here are my upcoming events: "+_events.toString()+userMessage;
 
     // Generate a response from the AI model
     try {
       final response = await model.generateContent(
-        [Content.text(messageTOrespons)],
+        [Content.text(userMessage)],
       );
-      // _messages.add(ChatBubbleWidget(
-      //   isAi: false,
-      //   title: 'for testing',
-      //   message: messageTOrespons,
-      // ));
+
       if (response.text != null && response.text!.isNotEmpty) {
         setState(() {
           _messages.add(ChatBubbleWidget(
@@ -204,10 +173,6 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
   }
 }
 
-void ScheduleBiAI() {
-    // Your scheduling logic here
-    print('Workout scheduled!');
-  }
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -237,10 +202,7 @@ void ScheduleBiAI() {
             ),
           ),
           title: Text(
-            //show the greeting message
-            'AI Assistant',
-            // hda sho ekon mktoob b3d el icon up bar
-            //_getGreeting(),
+            _getGreeting(),
             style: FlutterFlowTheme.of(context).headlineMedium.override(
                   fontFamily: 'Inter Tight',
                   color: FlutterFlowTheme.of(context).primaryText,
@@ -283,40 +245,20 @@ void ScheduleBiAI() {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // Text(
-                                //   //'AI Assistant',
-                                //   _getGreeting(),
-                                  
-                                //   style: FlutterFlowTheme.of(context).headlineSmall.override(
-                                //         fontFamily: 'Inter Tight',
-                                //         letterSpacing: 0.0,
-                                //       ),
-                                // ),
-                                FutureBuilder<String>(
-                                  future: _firstResponse(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
-                                      return CircularProgressIndicator();
-                                    } else if (snapshot.hasError) {
-                                      return Text(
-                                        'Error: ${snapshot.error}',
-                                        style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                              fontFamily: 'Inter',
-                                              color: FlutterFlowTheme.of(context).secondaryText,
-                                              letterSpacing: 0.0,
-                                            ),
-                                      );
-                                    } else {
-                                      return Text(
-                                        snapshot.data ?? '',
+                                Text(
+                                  'AI Assistant',
+                                  style: FlutterFlowTheme.of(context).headlineSmall.override(
+                                        fontFamily: 'Inter Tight',
+                                        letterSpacing: 0.0,
+                                      ),
+                                ),
+                                Text(
+                                  'How can I help you today?',
                                   style: FlutterFlowTheme.of(context).bodyMedium.override(
                                         fontFamily: 'Inter',
                                         color: FlutterFlowTheme.of(context).secondaryText,
                                         letterSpacing: 0.0,
                                       ),
-                                      );
-                                    }
-                                  },
                                 ),
                               ].divide(SizedBox(height: 12.0)),
                             ),
@@ -358,7 +300,6 @@ void ScheduleBiAI() {
                                           letterSpacing: 0.0,
                                         ),
                                   ),
-                                  //onPressed: ScheduleBiAI ,
                                 ),
                               ),
                               Container(

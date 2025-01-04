@@ -9,7 +9,7 @@ import '/flutter_flow/flutter_flow_theme.dart';
 import 'flutter_flow/flutter_flow_util.dart';
 import 'flutter_flow/nav/nav.dart';
 import 'index.dart';
-
+import 'test.dart';
 import 'package:pro_planner/theme/theme_notifier.dart';
 
 void main() async {
@@ -22,26 +22,6 @@ void main() async {
 
   runApp(MyApp());
 
-  // MaterialApp(
-  //     title: 'App Title',
-  //     theme: ThemeData(
-  //       brightness: Brightness.light,
-  //       /* light theme settings */
-  //     ),
-  //     darkTheme: ThemeData(
-  //       brightness: Brightness.dark,
-  //       /* dark theme settings */
-  //     ),
-  //     themeMode: ThemeMode.light, 
-  //     /* ThemeMode.system to follow system theme, 
-  //        ThemeMode.light for light theme, 
-  //        ThemeMode.dark for dark theme
-  //     */
-  //     debugShowCheckedModeBanner: false,
-  //     home: MyApp(), 
-  //     //MyApp_test(),
-  //   )
-  //   );
 }
 
 class MyApp extends StatefulWidget {

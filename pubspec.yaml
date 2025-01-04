@@ -38,6 +38,7 @@ dependencies:
   # Add other dependencies here
   collection: ^1.19.0
   flutter_animate: 4.5.0
+  flutter_colorpicker: ^1.0.3
   flutter_cache_manager: 3.4.1
   font_awesome_flutter: 10.7.0
   from_css_color: 2.0.0
