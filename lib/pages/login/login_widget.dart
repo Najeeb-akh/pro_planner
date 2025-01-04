@@ -1,7 +1,13 @@
+import 'package:pro_planner/index.dart';
+import 'package:pro_planner/main.dart';
+
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -40,8 +46,33 @@ class _LoginWidgetState extends State<LoginWidget> {
     super.dispose();
   }
 
+  Future<void> _signIn() async {
+    try {
+      final userCredential =
+          await firebase_auth.FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _model.textController1!.text,
+        password: _model.textController2!.text,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Successfully logged in as ${userCredential.user?.email}')),
+      );
+      // Navigate to the main page or home page
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => MainpageWidget()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to sign in: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    //final authProvider = Provider.of<AuthProvider>(context);
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -320,7 +351,13 @@ class _LoginWidgetState extends State<LoginWidget> {
                                   ),
                                   FFButtonWidget(
                                     onPressed: () {
-                                      print('Button pressed ...');
+                                      _signIn();
+                                      // Navigator.pushReplacement(
+                                      //   context,
+                                      //   MaterialPageRoute(
+                                      //       builder: (context) =>
+                                      //           MainpageWidget()),
+                                      // );
                                     },
                                     text: 'Sign In',
                                     options: FFButtonOptions(

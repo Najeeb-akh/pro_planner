@@ -12,6 +12,22 @@ import 'index.dart';
 import 'test.dart';
 import 'package:pro_planner/theme/theme_notifier.dart';
 
+class AuthProvider with ChangeNotifier {
+  bool _isLoggedIn = false;
+
+  bool get isLoggedIn => _isLoggedIn;
+
+  void login() {
+    _isLoggedIn = true;
+    notifyListeners();
+  }
+
+  void logout() {
+    _isLoggedIn = false;
+    notifyListeners();
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -20,7 +36,12 @@ void main() async {
 
   await FlutterFlowTheme.initialize();
 
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => AuthProvider(),
+      child: MyApp(),
+    ),
+  );
 
   // MaterialApp(
   //     title: 'App Title',
@@ -32,13 +53,13 @@ void main() async {
   //       brightness: Brightness.dark,
   //       /* dark theme settings */
   //     ),
-  //     themeMode: ThemeMode.light, 
-  //     /* ThemeMode.system to follow system theme, 
-  //        ThemeMode.light for light theme, 
+  //     themeMode: ThemeMode.light,
+  //     /* ThemeMode.system to follow system theme,
+  //        ThemeMode.light for light theme,
   //        ThemeMode.dark for dark theme
   //     */
   //     debugShowCheckedModeBanner: false,
-  //     home: MyApp(), 
+  //     home: MyApp(),
   //     //MyApp_test(),
   //   )
   //   );
@@ -55,7 +76,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = FlutterFlowTheme.themeMode;
-  //ThemeMode _themeMode = ThemeMode.dark; 
+  //ThemeMode _themeMode = ThemeMode.dark;
 
   late AppStateNotifier _appStateNotifier;
   late GoRouter _router;
@@ -78,44 +99,48 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeNotifier()), // Add ThemeNotifier
+        ChangeNotifierProvider(
+            create: (_) => ThemeNotifier()), // Add ThemeNotifier
         ChangeNotifierProvider(create: (_) => _appStateNotifier),
       ],
       child: Consumer<ThemeNotifier>(
         builder: (context, themeNotifier, child) {
           return MaterialApp(
-            title: 'ProPlanner',
-            theme: themeNotifier.currentTheme,
-            home: MainpageWidget(),
-          );
+              title: 'ProPlanner',
+              theme: themeNotifier.currentTheme,
+              home: Consumer<AuthProvider>(
+                builder: (context, auth, child) {
+                  return auth.isLoggedIn ? MainpageWidget() : LoginWidget();
+                },
+              ) //LoginWidget(), //MainpageWidget(),
+              );
         },
       ),
     );
   }
-  
 
-    // return MaterialApp(
-    //   title: 'ProPlanner',
-    //   localizationsDelegates: [
-    //     GlobalMaterialLocalizations.delegate,
-    //     GlobalWidgetsLocalizations.delegate,
-    //     GlobalCupertinoLocalizations.delegate,
-    //   ],
-    //   supportedLocales: const [Locale('en', '')],
-    //   theme: ThemeData(
-    //     brightness: Brightness.light,
-    //     useMaterial3: false,
-    //   ),
-    //   darkTheme: ThemeData(
-    //     brightness: Brightness.dark,
-    //     useMaterial3: false,
-    //   ),
-    //   themeMode: _themeMode,
-    //   //routerConfig: _router,
-    //   home: MyApp_test()
-    
-    //   //MyApp_test(),
-      
-    //   );
-  }
+  // return MaterialApp(
+  //   title: 'ProPlanner',
+  //   localizationsDelegates: [
+  //     GlobalMaterialLocalizations.delegate,
+  //     GlobalWidgetsLocalizations.delegate,
+  //     GlobalCupertinoLocalizations.delegate,
+  //   ],
+  //   supportedLocales: const [Locale('en', '')],
+  //   theme: ThemeData(
+  //     brightness: Brightness.light,
+  //     useMaterial3: false,
+  //   ),
+  //   darkTheme: ThemeData(
+  //     brightness: Brightness.dark,
+  //     useMaterial3: false,
+  //   ),
+  //   themeMode: _themeMode,
+  //   //routerConfig: _router,
+  //   home: MyApp_test()
+
+  //   //MyApp_test(),
+
+  //   );
+}
 //}
