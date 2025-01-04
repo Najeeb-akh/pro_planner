@@ -160,11 +160,12 @@ class MainpageWidget extends StatefulWidget {
 }
 
 
-class _MainpageWidgetState extends State<MainpageWidget> {
+class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObserver {
   late MainpageModel _model;
   bool isDarkMode = false;
   //should be changed to the user id from the firebase auth
   final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
+  int globalEventCounter = 20; // Global counter
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -181,6 +182,7 @@ class _MainpageWidgetState extends State<MainpageWidget> {
   String _eventStartTime = ''; 
   String _eventEndTime = ''; 
   Color selectedColor = Colors.blue;
+  bool _isKeyboardVisible = false;
   
   /// Adds a new event with the specified details and saves it to the events list.
   ///
@@ -212,11 +214,13 @@ class _MainpageWidgetState extends State<MainpageWidget> {
 
     // Save the new event in Firebase Realtime Database
     final DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
-    databaseReference.push().set({
-      'eventName': eventName,
+      final eventId = 'eventId${globalEventCounter++}';
+    databaseReference.child('/$eventId').set({
+      'color': 1,
       'startTime': startTime.toIso8601String(),
       'endTime': endTime.toIso8601String(),
       'location': location,
+      'title': eventName,
       'description': _eventDescription,
     });
 
@@ -280,6 +284,7 @@ class _MainpageWidgetState extends State<MainpageWidget> {
     _model = createModel(context, () => MainpageModel());
     _fetchEvents();
     _selectedDate = DateTime.now(); // Select the current date when the app is loaded
+    WidgetsBinding.instance.addObserver(this);
   }
 
   void _fetchEvents() {
@@ -311,7 +316,7 @@ class _MainpageWidgetState extends State<MainpageWidget> {
   @override
   void dispose() {
     _model.dispose();
-
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
   
@@ -403,7 +408,7 @@ class _MainpageWidgetState extends State<MainpageWidget> {
         key: scaffoldKey,
         
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-        floatingActionButton: _isFabVisible // Modify this line
+        floatingActionButton: _isFabVisible && !_isKeyboardVisible // Modify this line
             ? FloatingActionButton.extended(
                 onPressed: _togglePopup,
                 backgroundColor: FlutterFlowTheme.of(context).primaryText,
@@ -422,8 +427,9 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                       ),
                 ),
               )
-            : FloatingActionButton(
-                onPressed: null,
+            : 
+            FloatingActionButton(
+                onPressed: _togglePopup, 
                 backgroundColor: FlutterFlowTheme.of(context).primaryText,
                 child: Icon(
                   Icons.more_time_rounded,
@@ -529,9 +535,8 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                               ),
                             ),
                           ),
-                          Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(
-                                16.0, 0.0, 16.0, 0.0),
+                          Padding(padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+                                
                             child: Container(
                               width: MediaQuery.sizeOf(context).width * 1.0,
                               decoration: BoxDecoration(
@@ -828,7 +833,7 @@ class _MainpageWidgetState extends State<MainpageWidget> {
             ),
               if (_isPopupVisible)
                 GestureDetector(
-                  onTap: _togglePopup,
+                  onTap: null ,//_togglePopup,
                   child: Container(
                     //width: MediaQuery.of(context).size.width,
                     //height: MediaQuery.of(context).size.height,
@@ -844,7 +849,7 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                       child: 
                         Container(
                         width: MediaQuery.of(context).size.width* 0.95,
-                        height: MediaQuery.of(context).size.height *0.7,
+                        height: MediaQuery.of(context).size.height *0.70,
                         child: _buildPopupCard(),
                         ),
                       ),
@@ -893,7 +898,6 @@ class _MainpageWidgetState extends State<MainpageWidget> {
               height: 40,
               child:
               TextField(
-              
               decoration: InputDecoration(
                 labelText: 'Event Title',
                 floatingLabelBehavior: FloatingLabelBehavior.auto,
@@ -909,18 +913,18 @@ class _MainpageWidgetState extends State<MainpageWidget> {
             ),
             
             ),
-            SizedBox(height: 20.0),
+            SizedBox(height: 10.0),
           
             ListTile(
               title: Text(
-                "Date: ${selectedDate.toLocal()}".split(' ')[0],
+                "Date: ${selectedDate.toLocal().day}/${selectedDate.toLocal().month}/${selectedDate.toLocal().year}",
                 style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
               ),
               trailing: Icon(Icons.calendar_today, color: !isDarkMode ? Colors.white : Colors.black),
               onTap: () => selectDate(context),
             ),
 
-            SizedBox(height: 12.0),
+            
               Row(
                 children: [
                   Expanded(
@@ -1049,25 +1053,30 @@ class _MainpageWidgetState extends State<MainpageWidget> {
                     fontSize: 16,
                   ),
                 ),
-                // Circle displaying selected color
+                
                 
                 SizedBox(width: 30),
-                // Paintbrush icon
+              
                 
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: selectedColor, // The color chosen by the user
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey, width: 1),
-                  ),
-                ),
+                GestureDetector(
+                        onTap: () {
+                          _showColorPicker(context);
+                        },
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: selectedColor, // The color chosen by the user
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                        ),
+                      )
                 // Label
                
               ],
             ),
-SizedBox(height: 15.0),
+            SizedBox(height: 15.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
