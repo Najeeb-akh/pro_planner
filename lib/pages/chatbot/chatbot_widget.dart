@@ -41,10 +41,12 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
   bool _isLoading = false;
   final ScrollController _scrollController = ScrollController();
   final List<ChatBubbleWidget> _messages = [];
-  final model = FirebaseVertexAI.instance.generativeModel(model: 'gemini-1.5-flash-001');
+  final model = FirebaseVertexAI.instance.generativeModel(model: 'gemini-1.5-flash-002');
   final ValueNotifier<bool> _messageNotifier = ValueNotifier(false);
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
+  String rrespond = '';
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +55,12 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
     _fetchEvents();
     _model.textController ??= TextEditingController();
     _model.textFieldFocusNode ??= FocusNode();
+    model.generateContent([Content.text("hi my name is adam respond with lovely emojis")]).then((response) {
+      setState(() {
+        rrespond = response.text ?? '';
+      });
+    });
+      
   }
   //Fetch schedules from Firebase based on the query
     List<Event> _events = [];
@@ -90,6 +98,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
       }
     });
   }
+  
   Future<String> _firstResponse() async {
       final response = await model.generateContent(
           [Content.text("hi my name is adam")],
@@ -102,6 +111,9 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
         // ));
         return responseText;
     }
+    //  final prompt = "Write a story about a magic backpack.";
+    //  final response = model.generateContent(prompt);
+
 
   void _sendMessage() async {
   if (_model.textController!.text.isNotEmpty) {
@@ -204,9 +216,29 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
   }
 }
 
-void ScheduleBiAI() {
-    // Your scheduling logic here
-    print('Workout scheduled!');
+void ScheduleBiAI(String s) async{
+  final eventsString = _events.map((e) {
+      // Return a formatted string for each event
+      return '''
+      Title: ${e.title}
+      Description: ${e.description}
+      Start Time: ${e.startTime}
+      End Time: ${e.endTime}
+      Location: ${e.location}
+      ''';
+      // Join all the formatted strings with two newlines between each event
+    }).join('\n\n');
+    final response = await model.generateContent(
+          [Content.text(s+"take a look in my events , Here is my upcoming events, from schedule calendar "+eventsString)],
+        );
+        setState(() {
+          _messages.add(ChatBubbleWidget(
+            isAi: true,
+            title: 'AI Assistant',
+            message: response.text!,
+          ));
+          _isLoading = false;
+        });
   }
   @override
   Widget build(BuildContext context) {
@@ -293,7 +325,7 @@ void ScheduleBiAI() {
                                 //       ),
                                 // ),
                                 FutureBuilder<String>(
-                                  future: _firstResponse(),
+                                  future: Future.value(rrespond),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState == ConnectionState.waiting) {
                                       return CircularProgressIndicator();
@@ -324,87 +356,34 @@ void ScheduleBiAI() {
                         ),
                         //suggetions for input
                        
-                        Container(
-                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 12.0, 0.0, 12.0),
-                          height: 70.0,
-                          child: ListView(
-                            padding: EdgeInsets.fromLTRB(
-                              16.0,
-                              0,
-                              16.0,
-                              0,
-                            ),
-                            primary: false,
-                            shrinkWrap: true,
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              // suggestions for input
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).primary,
-                                  borderRadius: BorderRadius.circular(25.0),
-                                  border: Border.all(
-                                    color: FlutterFlowTheme.of(context).primary,
-                                    width: 1.0,
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(16.0, 12.0, 16.0, 12.0),
-                                  child: Text(
-                                    'Schedule a workout',
-                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                          fontFamily: 'Inter',
-                                          color: FlutterFlowTheme.of(context).alternate,
-                                          letterSpacing: 0.0,
-                                        ),
-                                  ),
-                                  //onPressed: ScheduleBiAI ,
-                                ),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: <Widget>[
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Your logic for "Plan team meeting"
+                                  ScheduleBiAI("paln a meeting");
+                                },
+                                child: Text('Plan team meeting'),
                               ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).primary,
-                                  borderRadius: BorderRadius.circular(25.0),
-                                  border: Border.all(
-                                    color: FlutterFlowTheme.of(context).primary,
-                                    width: 1.0,
-                                  ),
-                                ),  
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(16.0, 12.0, 16.0, 12.0),
-                                  child: Text(
-                                    'Plan team meeting',
-                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                          fontFamily: 'Inter',
-                                          color: FlutterFlowTheme.of(context).alternate,
-                                          letterSpacing: 0.0,
-                                        ),
-                                  ),
-                                ),
-
+                              SizedBox(width: 8), // Add spacing between buttons
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Your logic for "Schedule a meeting"
+                                  ScheduleBiAI("Schedule a meeting");
+                                },
+                                child: Text('Schedule a meeting'),
                               ),
-                              Container(
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context).primary,
-                                    borderRadius: BorderRadius.circular(25.0),
-                                    border: Border.all(
-                                      color: FlutterFlowTheme.of(context).primary,
-                                      width: 1.0,
-                                    ),
-                                  ),
-                                  child: Padding(
-                                   padding: EdgeInsetsDirectional.fromSTEB(16.0, 12.0, 16.0, 12.0),
-                                    child: Text(
-                                      'Family dinner',
-                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                            fontFamily: 'Inter',
-                                            color: FlutterFlowTheme.of(context).alternate,
-                                            letterSpacing: 0.0,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                            ].divide(SizedBox(width: 12.0)),
+                              SizedBox(width: 8), // Add spacing between buttons
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Your logic for "Schedule a workout"
+                                  ScheduleBiAI("Schedule a workout");
+                                },
+                                child: Text('Schedule a workout'),
+                              ),
+                            ],
                           ),
                         ),
                         ],
