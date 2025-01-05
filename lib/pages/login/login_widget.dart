@@ -334,22 +334,22 @@ class _LoginWidgetState extends State<LoginWidget> {
                                     validator: _model.textController2Validator
                                         .asValidator(context),
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        'Forgot Password?',
-                                        style: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .override(
-                                              fontFamily: 'Inter',
-                                              color: Colors.white,
-                                              letterSpacing: 0.0,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
+                                  // Row(
+                                  //   mainAxisSize: MainAxisSize.max,
+                                  //   mainAxisAlignment: MainAxisAlignment.end,
+                                  //   children: [
+                                  //     Text(
+                                  //       'Forgot Password?',
+                                  //       style: FlutterFlowTheme.of(context)
+                                  //           .bodyMedium
+                                  //           .override(
+                                  //             fontFamily: 'Inter',
+                                  //             color: Colors.white,
+                                  //             letterSpacing: 0.0,
+                                  //           ),
+                                  //     ),
+                                  //   ],
+                                  // ),
                                   FFButtonWidget(
                                     onPressed: () {
                                       _signIn();

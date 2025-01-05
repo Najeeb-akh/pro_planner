@@ -1,3 +1,4 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:pro_planner/index.dart';
 import 'package:pro_planner/main.dart';
 
@@ -59,16 +60,33 @@ class _SignupWidgetState extends State<SignupWidget> {
         email: _model.textController1!.text,
         password: _model.textController2!.text,
       );
+
+      String uid = userCredential.user!.uid;
+
       // Save additional user information to Firestore
-      // await FirebaseFirestore.instance
-      //     .collection('users')
-      //     .doc(userCredential.user?.uid)
-      //     .set({
+      // await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      //   'events': [],
+      //   'suggestions': [],
+      //   'categories': [],
       //   'name': _model.textController3!.text,
       //   'description': _model.textController4!.text,
       //   'email': _model.textController1!.text,
       //   'createdAt': Timestamp.now(),
       // });
+
+      // Save the new event in Firebase Realtime Database
+      final DatabaseReference databaseReference =
+          FirebaseDatabase.instance.ref().child('users');
+      databaseReference.child('/$uid').set({
+        'events': [],
+        'suggestions': [],
+        'categories': [],
+        'name': _model.textController3!.text,
+        'description': _model.textController4!.text,
+        'email': _model.textController1!.text,
+        'createdAt': Timestamp.now(),
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
