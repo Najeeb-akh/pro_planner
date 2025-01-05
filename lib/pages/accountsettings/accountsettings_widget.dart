@@ -11,8 +11,8 @@ import 'package:provider/provider.dart';
 import 'accountsettings_model.dart';
 export 'accountsettings_model.dart';
 
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+// import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AccountsettingsWidget extends StatefulWidget {
   /// create a profile information, in theprofile information page there will be
@@ -42,22 +42,22 @@ class _AccountsettingsWidgetState extends State<AccountsettingsWidget> {
     super.dispose();
   }
 
-  Future<void> _signOut() async {
-    try {
-      await firebase_auth.FirebaseAuth.instance.signOut();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Successfully signed out')),
-      );
-      // Navigate to the login page
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => LoginWidget()),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to sign out: $e')),
-      );
-    }
-  }
+  // Future<void> _signOut() async {
+  //   try {
+  //     await firebase_auth.FirebaseAuth.instance.signOut();
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Successfully signed out')),
+  //     );
+  //     // Navigate to the login page
+  //     Navigator.of(context).pushReplacement(
+  //       MaterialPageRoute(builder: (context) => LoginWidget()),
+  //     );
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to sign out: $e')),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -557,58 +557,58 @@ class _AccountsettingsWidgetState extends State<AccountsettingsWidget> {
                                 ],
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () async {
-                                await _signOut();
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context)
-                                      .primaryBackground,
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 16.0, 16.0, 16.0),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        mainAxisSize: MainAxisSize.max,
-                                        children: [
-                                          Icon(
-                                            Icons.logout,
-                                            color: FlutterFlowTheme.of(context)
-                                                .error,
-                                            size: 24.0,
-                                          ),
-                                          Text(
-                                            'Sign Out',
-                                            style: FlutterFlowTheme.of(context)
-                                                .bodyMedium
-                                                .override(
-                                                  fontFamily: 'Inter',
-                                                  color: FlutterFlowTheme.of(
-                                                          context)
-                                                      .error,
-                                                  letterSpacing: 0.0,
-                                                ),
-                                          ),
-                                        ].divide(SizedBox(width: 12.0)),
-                                      ),
-                                      Icon(
-                                        Icons.chevron_right,
-                                        color: FlutterFlowTheme.of(context)
-                                            .secondaryText,
-                                        size: 24.0,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
+                            // GestureDetector(
+                            //   onTap: () async {
+                            //     await _signOut();
+                            //   },
+                            //   child: Container(
+                            //     decoration: BoxDecoration(
+                            //       color: FlutterFlowTheme.of(context)
+                            //           .primaryBackground,
+                            //       borderRadius: BorderRadius.circular(12.0),
+                            //     ),
+                            //     child: Padding(
+                            //       padding: EdgeInsetsDirectional.fromSTEB(
+                            //           16.0, 16.0, 16.0, 16.0),
+                            //       child: Row(
+                            //         mainAxisSize: MainAxisSize.max,
+                            //         mainAxisAlignment:
+                            //             MainAxisAlignment.spaceBetween,
+                            //         children: [
+                            //           Row(
+                            //             mainAxisSize: MainAxisSize.max,
+                            //             children: [
+                            //               Icon(
+                            //                 Icons.logout,
+                            //                 color: FlutterFlowTheme.of(context)
+                            //                     .error,
+                            //                 size: 24.0,
+                            //               ),
+                            //               Text(
+                            //                 'Sign Out',
+                            //                 style: FlutterFlowTheme.of(context)
+                            //                     .bodyMedium
+                            //                     .override(
+                            //                       fontFamily: 'Inter',
+                            //                       color: FlutterFlowTheme.of(
+                            //                               context)
+                            //                           .error,
+                            //                       letterSpacing: 0.0,
+                            //                     ),
+                            //               ),
+                            //             ].divide(SizedBox(width: 12.0)),
+                            //           ),
+                            //           Icon(
+                            //             Icons.chevron_right,
+                            //             color: FlutterFlowTheme.of(context)
+                            //                 .secondaryText,
+                            //             size: 24.0,
+                            //           ),
+                            //         ],
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
                             // Container(
                             //   decoration: BoxDecoration(
                             //     color: FlutterFlowTheme.of(context)
