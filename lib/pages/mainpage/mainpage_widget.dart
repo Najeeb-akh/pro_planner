@@ -12,6 +12,8 @@ import 'mainpage_model.dart';
 export 'mainpage_model.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../theme/theme_notifier.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 
 class Event {
@@ -21,6 +23,7 @@ class Event {
   final String endTime;
   final String description;
   final String location;
+  final DateTime date; // Add date field
 
   Event({
     required this.title,
@@ -29,34 +32,23 @@ class Event {
     required this.endTime,
     required this.description,
     required this.location,
+    required this.date, // Initialize date field
   });
 
   factory Event.fromMap(Map<dynamic, dynamic> map) {
     return Event(
-      title: map['title'],
-      color: _getColorFromNumber(map['color']),
-      startTime: map['startTime'],
-      endTime: map['endTime'],
-      description: map['description'],
-      location: map['location'],
+      title: map['title'] ?? '',
+      color: _getColorFromNumber(map['color'] ?? 0),
+      startTime: map['startTime'] ?? '',
+      endTime: map['endTime'] ?? '',
+      description: map['description'] ?? '',
+      location: map['location'] ?? '',
+      date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(), // Parse date field
     );
   }
 
   static Color _getColorFromNumber(int number) {
-    switch (number) {
-      case 1:
-        return Colors.redAccent;
-      case 2:
-        return Colors.blueAccent;
-      case 3:
-        return Colors.greenAccent;
-      case 4:
-        return Colors.yellowAccent;
-      case 5:
-        return Colors.orangeAccent;
-      default:
-        return Colors.grey;
-    }
+    return Color(number);
   }
 }
 
@@ -158,11 +150,12 @@ class MainpageWidget extends StatefulWidget {
 }
 
 
-class _MainpageWidgetState extends State<MainpageWidget> {
+class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObserver {
   late MainpageModel _model;
   bool isDarkMode = false;
   //should be changed to the user id from the firebase auth
   final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
+  int globalEventCounter = 20; // Global counter
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -170,6 +163,113 @@ class _MainpageWidgetState extends State<MainpageWidget> {
   
 
   DateTime _selectedDate = DateTime.now();
+  bool _isPopupVisible = false;
+  bool _isFabVisible = true;
+  String _eventTitle = ''; 
+  String _eventGuests = ''; 
+  String _eventLocation = ''; 
+  String _eventDescription = '';
+  String _eventStartTime = ''; 
+  String _eventEndTime = ''; 
+  Color selectedColor = Colors.blue;
+  bool _isKeyboardVisible = false;
+  
+  /// Adds a new event with the specified details and saves it to the events list.
+  ///
+  /// This function handles the creation of a new event by generating necessary 
+  /// IDs or data structures, then stores the result in the persistent data layer.
+  /// Use this function in contexts where a fresh event is required to capture 
+  /// user actions or system-triggered occurrences.
+  ///
+  /// Returns 1 if the event name is empty.
+  /// Returns 2 if the event location is empty.
+  /// Returns 3 if the event description is empty.
+  /// returns 4 if the start time is after the end time.
+  /// returns 5 if the start time or end time is empty.
+  /// Returns 10 if the event is successfully added.  
+
+
+
+  int _addNewEvent(String eventName, Color select_color,  DateTime startTime, DateTime endTime,  String description , String location) {
+    // Check if any parameter is empty
+    if (eventName.isEmpty)
+      return 1;
+    if (location.isEmpty)
+      return 2;
+    if (description.isEmpty)
+      return 3;
+    if (startTime.isAfter(endTime))
+      return 4;
+    if(startTime.toIso8601String() == "" || endTime.toIso8601String() == "")
+      return 5;
+
+
+
+    // Save the new event in Firebase Realtime Database
+    final DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
+      final eventId = 'eventId${globalEventCounter++}';
+    databaseReference.child('/$eventId').set({
+      'title': eventName,
+      'color': select_color.value,
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
+      'location': location,
+      'description': _eventDescription,
+    });
+
+    return 10;
+  }
+
+  void _togglePopup() {
+    _eventTitle = '';
+    _eventGuests = '';
+    _eventLocation = '';
+    _eventDescription = '';
+    _eventStartTime = '';
+    _eventEndTime = '';
+    setState(() {
+      _isPopupVisible = !_isPopupVisible;
+      _isFabVisible = !_isPopupVisible; // Add this line
+    });
+  }
+
+  DateTime selectedDate = DateTime.now();
+  TimeOfDay selectedTime = TimeOfDay.now();
+
+  Future<void> selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != selectedDate)
+      setState(() {
+        selectedDate = picked;
+      });
+  }
+
+  Future<void> selectStartTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime,
+    );
+    if (picked != null && picked != selectedTime)
+      setState(() {
+        _eventStartTime = picked.format(context); // Add this line
+      });
+  }
+
+  Future<void> selectEndTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime,
+    );
+    if (picked != null && picked != selectedTime)
+      setState(() {
+        _eventEndTime = picked.format(context); // Add this line
+      });
+  }
 
   @override
   void initState() {
@@ -177,6 +277,7 @@ class _MainpageWidgetState extends State<MainpageWidget> {
     _model = createModel(context, () => MainpageModel());
     _fetchEvents();
     _selectedDate = DateTime.now(); // Select the current date when the app is loaded
+    WidgetsBinding.instance.addObserver(this);
   }
 
   void _fetchEvents() {
@@ -208,9 +309,85 @@ class _MainpageWidgetState extends State<MainpageWidget> {
   @override
   void dispose() {
     _model.dispose();
-
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+  
+  //   void _showColorPicker(BuildContext context) {
+  //   final List<Color> colors = [
+  //     Colors.red,
+  //     Colors.green,
+  //     Colors.blue,
+  //     Colors.orange,
+  //     Colors.purple,
+  //     Colors.yellow,
+  //   ];
+
+  //   showModalBottomSheet(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return GridView.builder(
+  //         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+  //           crossAxisCount: 4,
+  //           crossAxisSpacing: 8,
+  //           mainAxisSpacing: 8,
+  //         ),
+  //         itemCount: colors.length,
+  //         padding: EdgeInsets.all(16.0),
+  //         itemBuilder: (BuildContext context, int index) {
+  //           return GestureDetector(
+  //             onTap: () {
+  //               setState(() {
+  //                 selectedColor = colors[index];
+  //               });
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: Container(
+  //               decoration: BoxDecoration(
+  //                 color: colors[index],
+  //                 shape: BoxShape.circle,
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
+
+  void _showColorPicker(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Pick a Color"),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: selectedColor,
+            onColorChanged: (color) {
+              setState(() {
+                selectedColor = color;
+              });
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: Text("Cancel"),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          ElevatedButton(
+            child: Text("Select"),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+
 
   var event_counter = 0;
   @override
@@ -222,30 +399,38 @@ class _MainpageWidgetState extends State<MainpageWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
+        
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            setState(() {
-              isDarkMode = !isDarkMode;
-            });
-
-          },
-          backgroundColor: FlutterFlowTheme.of(context).primaryText,
-          icon: Icon(
-            Icons.more_time_rounded,
-            color: FlutterFlowTheme.of(context).primaryBackground,
-            size: 25.0,
-          ),
-          elevation: 8.0,
-          label: Text(
-            'Add Event',
-            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                  fontFamily: 'Inter',
-                  color: FlutterFlowTheme.of(context).alternate,
-                  letterSpacing: 0.0,
+        floatingActionButton: _isFabVisible && !_isKeyboardVisible // Modify this line
+            ? FloatingActionButton.extended(
+                onPressed: _togglePopup,
+                backgroundColor: FlutterFlowTheme.of(context).primaryText,
+                icon: Icon(
+                  Icons.more_time_rounded,
+                  color: FlutterFlowTheme.of(context).primaryBackground,
+                  size: 25.0,
                 ),
-          ),
-        ),
+                elevation: 8.0,
+                label: Text(
+                  'Add Event',
+                  style: FlutterFlowTheme.of(context).bodyMedium.override(
+                        fontFamily: 'Inter',
+                        color: FlutterFlowTheme.of(context).alternate,
+                        letterSpacing: 0.0,
+                      ),
+                ),
+              )
+            : 
+            FloatingActionButton(
+                onPressed: _togglePopup, 
+                backgroundColor: FlutterFlowTheme.of(context).primaryText,
+                child: Icon(
+                  Icons.more_time_rounded,
+                  color: FlutterFlowTheme.of(context).primaryBackground,
+                  size: 25.0,
+                ),
+                elevation: 8.0,
+              ), // Add this line
         drawer: Drawer(
           elevation: 16.0,
           child: Align(
@@ -310,338 +495,546 @@ class _MainpageWidgetState extends State<MainpageWidget> {
             toolbarHeight: MediaQuery.sizeOf(context).height * 0.2,
           ),
         ),
-        body: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-                        child: Container(
-                          width: MediaQuery.sizeOf(context).width * 1.0,
-                          decoration: BoxDecoration(
-                            color: FlutterFlowTheme.of(context).secondaryBackground,
-                            borderRadius: BorderRadius.circular(16.0),
-                          ),
-                          child: Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 16.0),
-                            child: WeeklyCalendarWidget(
-                              onDateSelected: (date) {
-                                setState(() {
-                                  _selectedDate = date;
-                                });
-                              },
-                              selectedDate: _selectedDate,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
-                            16.0, 0.0, 16.0, 0.0),
-                        child: Container(
-                          width: MediaQuery.sizeOf(context).width * 1.0,
-                          decoration: BoxDecoration(
-                            color: FlutterFlowTheme.of(context)
-                                .secondaryBackground,
-                            borderRadius: BorderRadius.circular(16.0),
-                          ),
-                          child: Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(
-                                16.0, 16.0, 16.0, 16.0),
-                            child:  Column(
-                                key: ValueKey(_selectedDate),
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Today\'s Schedule',
-                                    style: FlutterFlowTheme.of(context)
-                                        .headlineSmall
-                                        .override(
-                                          fontFamily: 'Inter Tight',
-                                          letterSpacing: 0.0,
-                                        ),
-                                  ),
-                                  
-                                  // take the events from the firebase and put inside of the widget
-                                  if (_getTodayEvents(_selectedDate).isEmpty)
-                                    
-                                    Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Padding(padding: EdgeInsetsDirectional.fromSTEB(0.0, 8.0, 0.0, 8.0)),
-                                             
-                                                ShaderMask(
-                                                    shaderCallback: (bounds) => LinearGradient(
-                                                      colors: [Colors.blue, Colors.purple, Colors.amber[700]!],
-                                                      begin: Alignment.topLeft,
-                                                      end: Alignment.bottomRight,
-                                                    ).createShader(bounds),
-                                                    child: Center(
-                                                      child: Column(
-                                                      children: [
-                                                          
-                                                      FadingText(
-                                                      //textAlign: TextAlign.center,
-                                                      text: "You have no events today.",
-                                                      style: TextStyle(
-                                                        fontSize: 16,
-                                                        fontStyle: FontStyle.italic,
-                                                        fontFamily: 'Inter',
-                                                        fontWeight: FontWeight.w500,
-                                                        color: Colors.white, // Acts as a fallback color
-                                                      ),
-                                                    ),
-                                                        FadingText(
-                                                      //textAlign: TextAlign.center,
-                                                      text: "Why not add something to look forward to?",
-                                                      style: TextStyle(
-                                                        fontSize: 16,
-                                                        fontStyle: FontStyle.italic,
-                                                        fontFamily: 'Inter',
-                                                        fontWeight: FontWeight.w500,
-                                                        color: Colors.white, // Acts as a fallback color
-                                                      ),
-                                                    ),
-                                                        
-                                                        ],
-                                                      ),    
-                                                    
-                                                    ),
-                                                  ),
-                                              Padding(padding: EdgeInsetsDirectional.fromSTEB(0.0, 8.0, 0.0, 8.0)),
-                                              
-                                            
-                                            ],
-                                          ),
-                                  for (var event in _getTodayEvents(_selectedDate)..sort((a, b) => DateTime.parse(a.startTime).compareTo(DateTime.parse(b.startTime)))) 
-                                    EventCardWidget(
-                                          title: event.title,
-                                          color: event.color,
-                                          startTime: event.startTime,
-                                          endTime: event.endTime,
-                                        ),
-                                  
-                                ].divide(SizedBox(height: 16.0)),
+        body: Stack(
+          children: [
+            SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Padding(
+                            padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+                            child: Container(
+                              width: MediaQuery.sizeOf(context).width * 1.0,
+                              decoration: BoxDecoration(
+                                color: FlutterFlowTheme.of(context).secondaryBackground,
+                                borderRadius: BorderRadius.circular(16.0),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 16.0),
+                                child: WeeklyCalendarWidget(
+                                  onDateSelected: (date) {
+                                    setState(() {
+                                      _selectedDate = date;
+                                    });
+                                  },
+                                  selectedDate: _selectedDate,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      
-                      Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
-                            16.0, 0.0, 16.0, 0.0),
-                        child: Container(
-                          width: MediaQuery.sizeOf(context).width * 1.0,
-                          height: 190.0,
-                          decoration: BoxDecoration(),
-                          child: ListView(
-                            padding: EdgeInsets.fromLTRB(
-                              16.0,
-                              0,
-                              16.0,
-                              0,
+                          Padding(padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+                                
+                            child: Container(
+                              width: MediaQuery.sizeOf(context).width * 1.0,
+                              decoration: BoxDecoration(
+                                color: FlutterFlowTheme.of(context)
+                                    .secondaryBackground,
+                                borderRadius: BorderRadius.circular(16.0),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsetsDirectional.fromSTEB(
+                                    16.0, 16.0, 16.0, 16.0),
+                                child:  Column(
+                                    key: ValueKey(_selectedDate),
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Today\'s Schedule',
+                                        style: FlutterFlowTheme.of(context)
+                                            .headlineSmall
+                                            .override(
+                                              fontFamily: 'Inter Tight',
+                                              letterSpacing: 0.0,
+                                            ),
+                                      ),
+                                      
+                                      // take the events from the firebase and put inside of the widget
+                                      if (_getTodayEvents(_selectedDate).isEmpty)
+                                        
+                                        Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Padding(padding: EdgeInsetsDirectional.fromSTEB(0.0, 8.0, 0.0, 8.0)),
+                                                 
+                                                    ShaderMask(
+                                                        shaderCallback: (bounds) => LinearGradient(
+                                                          colors: [Colors.blue, Colors.purple, Colors.amber[700]!],
+                                                          begin: Alignment.topLeft,
+                                                          end: Alignment.bottomRight,
+                                                        ).createShader(bounds),
+                                                        child: Center(
+                                                          child: Column(
+                                                          children: [
+                                                              
+                                                          FadingText(
+                                                          //textAlign: TextAlign.center,
+                                                          text: "You have no events today.",
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            fontStyle: FontStyle.italic,
+                                                            fontFamily: 'Inter',
+                                                            fontWeight: FontWeight.w500,
+                                                            color: Colors.white, // Acts as a fallback color
+                                                          ),
+                                                        ),
+                                                            FadingText(
+                                                          //textAlign: TextAlign.center,
+                                                          text: "Why not add something to look forward to?",
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            fontStyle: FontStyle.italic,
+                                                            fontFamily: 'Inter',
+                                                            fontWeight: FontWeight.w500,
+                                                            color: Colors.white, // Acts as a fallback color
+                                                          ),
+                                                        ),
+                                                            
+                                                            ],
+                                                          ),    
+                                                        
+                                                        ),
+                                                      ),
+                                                  Padding(padding: EdgeInsetsDirectional.fromSTEB(0.0, 8.0, 0.0, 8.0)),
+                                                  
+                                                
+                                                ],
+                                              ),
+                                      for (var event in _getTodayEvents(_selectedDate)..sort((a, b) => DateTime.parse(a.startTime).compareTo(DateTime.parse(b.startTime)))) 
+                                        EventCardWidget(
+                                              title: event.title,
+                                              color: event.color,
+                                              startTime: event.startTime,
+                                              endTime: event.endTime,
+                                             
+                                            ),
+                                      
+                                    ].divide(SizedBox(height: 16.0)),
+                                  ),
+                                ),
+                              ),
                             ),
-                            primary: false,
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              // suggestion card sprint 2
-                              // Material(
-                              //   color: Colors.transparent,
-                              //   elevation: 2.0,
-                              //   shape: RoundedRectangleBorder(
-                              //     borderRadius: BorderRadius.circular(16.0),
-                              //   ),
-                              //   child: Container(
-                              //     width: 280.0,
-                              //     height: double.infinity,
-                              //     decoration: BoxDecoration(
-                              //       color: FlutterFlowTheme.of(context)
-                              //           .secondaryBackground,
-                              //       borderRadius: BorderRadius.circular(16.0),
-                              //     ),
-                              //     child: Padding(
-                              //       padding: EdgeInsetsDirectional.fromSTEB(
-                              //           16.0, 16.0, 16.0, 16.0),
-                              //       child: Column(
-                              //         mainAxisSize: MainAxisSize.min,
-                              //         mainAxisAlignment:
-                              //             MainAxisAlignment.center,
-                              //         crossAxisAlignment:
-                              //             CrossAxisAlignment.start,
-                              //         children: [
-                              //           Row(
-                              //             mainAxisSize: MainAxisSize.max,
-                              //             children: [
-                              //               Icon(
-                              //                 Icons.fitness_center,
-                              //                 color:
-                              //                     FlutterFlowTheme.of(context)
-                              //                         .primary,
-                              //                 size: 24.0,
-                              //               ),
-                              //               Text(
-                              //                 'Fitness Suggestion',
-                              //                 style:
-                              //                     FlutterFlowTheme.of(context)
-                              //                         .bodySmall
-                              //                         .override(
-                              //                           fontFamily: 'Inter',
-                              //                           color:
-                              //                               FlutterFlowTheme.of(
-                              //                                       context)
-                              //                                   .primary,
-                              //                           letterSpacing: 0.0,
-                              //                         ),
-                              //               ),
-                              //             ].divide(SizedBox(width: 12.0)),
-                              //           ),
-                              //           Text(
-                              //             'Add gym to your schedule',
-                              //             style: FlutterFlowTheme.of(context)
-                              //                 .headlineSmall
-                              //                 .override(
-                              //                   fontFamily: 'Inter Tight',
-                              //                   letterSpacing: 0.0,
-                              //                 ),
-                              //           ),
-                              //           Text(
-                              //             'You have free time today at 5 PM',
-                              //             style: FlutterFlowTheme.of(context)
-                              //                 .bodyMedium
-                              //                 .override(
-                              //                   fontFamily: 'Inter',
-                              //                   color:
-                              //                       FlutterFlowTheme.of(context)
-                              //                           .secondaryText,
-                              //                   letterSpacing: 0.0,
-                              //                 ),
-                              //           ),
-                              //         ].divide(SizedBox(height: 8.0)),
-                              //       ),
-                              //     ),
-                              //   ),
-                              // ),
-                             
-                             //suggestion card sprint 2
-                              // Material(
-                              //   color: Colors.transparent,
-                              //   elevation: 2.0,
-                              //   shape: RoundedRectangleBorder(
-                              //     borderRadius: BorderRadius.circular(16.0),
-                              //   ),
-                              //   child: Container(
-                              //     width: 280.0,
-                              //     decoration: BoxDecoration(
-                              //       color: FlutterFlowTheme.of(context)
-                              //           .secondaryBackground,
-                              //       borderRadius: BorderRadius.circular(16.0),
-                              //     ),
-                              //     child: Padding(
-                              //       padding: EdgeInsetsDirectional.fromSTEB(
-                              //           16.0, 16.0, 16.0, 16.0),
-                              //       child: Column(
-                              //         mainAxisSize: MainAxisSize.min,
-                              //         mainAxisAlignment:
-                              //             MainAxisAlignment.center,
-                              //         crossAxisAlignment:
-                              //             CrossAxisAlignment.start,
-                              //         children: [
-                              //           Row(
-                              //             mainAxisSize: MainAxisSize.max,
-                              //             children: [
-                              //               Icon(
-                              //                 Icons.work,
-                              //                 color:
-                              //                     FlutterFlowTheme.of(context)
-                              //                         .secondary,
-                              //                 size: 24.0,
-                              //               ),
-                              //               Text(
-                              //                 'Work Suggestion',
-                              //                 style:
-                              //                     FlutterFlowTheme.of(context)
-                              //                         .bodySmall
-                              //                         .override(
-                              //                           fontFamily: 'Inter',
-                              //                           color:
-                              //                               FlutterFlowTheme.of(
-                              //                                       context)
-                              //                                   .secondary,
-                              //                           letterSpacing: 0.0,
-                              //                         ),
-                              //               ),
-                              //             ].divide(SizedBox(width: 12.0)),
-                              //           ),
-                              //           Text(
-                              //             'Schedule team meeting',
-                              //             style: FlutterFlowTheme.of(context)
-                              //                 .headlineSmall
-                              //                 .override(
-                              //                   fontFamily: 'Inter Tight',
-                              //                   letterSpacing: 0.0,
-                              //                 ),
-                              //           ),
-                              //           Text(
-                              //             'Wednesday afternoon is open',
-                              //             style: FlutterFlowTheme.of(context)
-                              //                 .bodyMedium
-                              //                 .override(
-                              //                   fontFamily: 'Inter',
-                              //                   color:
-                              //                       FlutterFlowTheme.of(context)
-                              //                           .secondaryText,
-                              //                   letterSpacing: 0.0,
-                              //                 ),
-                              //           ),
-                              //         ].divide(SizedBox(height: 8.0)),
-                              //       ),
-                              //     ),
-                              //   ),
-                              // ),
-                            ]
-                            //.divide(SizedBox(width: 16.0)),
+                          
+                          // Padding(
+                          //   padding: EdgeInsetsDirectional.fromSTEB(
+                          //       16.0, 0.0, 16.0, 0.0),
+                          //   child: Container(
+                          //     width: MediaQuery.sizeOf(context).width * 1.0,
+                          //     height: 190.0,
+                          //     decoration: BoxDecoration(),
+                          //     child: ListView(
+                          //       padding: EdgeInsets.fromLTRB(
+                          //         16.0,
+                          //         0,
+                          //         16.0,
+                          //         0,
+                          //       ),
+                          //       primary: false,
+                          //       scrollDirection: Axis.horizontal,
+                          //       children: [
+                          //         SuggestWidget(
+                          //           icon: Icons.fitness_center,
+                          //           categoryTitle: 'Fitness Suggestion',
+                          //           mainTitle: 'Add gym to your schedule',
+                          //           descriptionTime: 'You have free time today at 5 PM',
+                          //         ),
+                          //         SizedBox(width: 16.0),
+                          //         SuggestWidget(
+                          //           icon: Icons.work,
+                          //           categoryTitle: 'Work Suggestion',
+                          //           mainTitle: 'Schedule team meeting',
+                          //           descriptionTime: 'Wednesday afternoon is open',
+                          //         ),
+                          //       ]
+                          //                                       //.divide(SizedBox(width: 16.0)),
+                          //     ),
+                          //   ),
+                          // ),
+                          
+                          
+                          //generate with ai button sprint 2
+                          wrapWithModel(
+                            model: _model.generatebyaiModel,
+                            updateCallback: () => safeSetState(() {}),
+                            child: GeneratebyaiWidget(),
                           ),
-                        ),
+                          Padding(
+                            padding: EdgeInsetsDirectional.fromSTEB(
+                                16.0, 0.0, 16.0, 0.0),
+                            child: Container(
+                              width: MediaQuery.sizeOf(context).width * 0.6,
+                              height: 60.0,
+                              decoration: BoxDecoration(),
+                            ),
+                            
+                          ),
+                            
+                        ]
+                            .divide(SizedBox(height: 25.0))
+                            .around(SizedBox(height: 25.0)),
                       ),
-                      
-                      
-                      //generate with ai button sprint 2
-                      wrapWithModel(
-                        model: _model.generatebyaiModel,
-                        updateCallback: () => safeSetState(() {}),
-                        child: GeneratebyaiWidget(),
-                      ),
-                      Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
-                            16.0, 0.0, 16.0, 0.0),
-                        child: Container(
-                          width: MediaQuery.sizeOf(context).width * 0.6,
-                          height: 60.0,
-                          decoration: BoxDecoration(),
-                        ),
-                        
-                      ),
-                        
-                    ]
-                        .divide(SizedBox(height: 25.0))
-                        .around(SizedBox(height: 25.0)),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+              if (_isPopupVisible)
+                GestureDetector(
+                  onTap: null ,//_togglePopup,
+                  child: Container(
+                    //width: MediaQuery.of(context).size.width,
+                    //height: MediaQuery.of(context).size.height,
+                    color: Theme.of(context).brightness != Brightness.dark 
+                        ? Colors.black.withOpacity(0.6)
+                        :Colors.white.withOpacity(0.6),
+                    child: 
+                    Padding(padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 70.0),
+                    child: 
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      //heightFactor: 0.8,
+                      child: 
+                        Container(
+                        width: MediaQuery.of(context).size.width* 0.95,
+                        height: MediaQuery.of(context).size.height *0.70,
+                        child: _buildPopupCard(),
+                        ),
+                      ),
+                      
+                    ),
+                    ),
+                  ),
+        
+                ],
+                 
         ),
       ),
     );
   }
+
+
+
+  Widget _buildPopupCard() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return 
+    SingleChildScrollView(
+      child: 
+    Card(
+      color: isDarkMode ? Colors.white: Colors.grey[900],
+      //margin: EdgeInsetsDirectional.fromSTEB(16.0, 24.0, 16.0, 8.0),
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(16.0, 24.0, 16.0, 8.0),
+        child: Column(
+          //mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Add New Event',
+              style: TextStyle( 
+                color: !isDarkMode ? Colors.white : Colors.black,
+                fontSize: 25.0,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Inter',
+
+              ),
+              
+              
+            ),
+            SizedBox(height: 12.0),
+            
+            SizedBox(
+              height: 40,
+              child:
+              TextField(
+              decoration: InputDecoration(
+                labelText: 'Event Title',
+                floatingLabelBehavior: FloatingLabelBehavior.auto,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                labelStyle: TextStyle(color: !isDarkMode ? Colors.white : Colors.grey[800]),
+              ),
+              style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+              onChanged: (value) {
+                setState(() {
+                  _eventTitle = value; // Add this line
+                });
+              },
+            ),
+            
+            ),
+            SizedBox(height: 10.0),
+          
+            ListTile(
+              title: Text(
+                "Date: ${selectedDate.toLocal().day}/${selectedDate.toLocal().month}/${selectedDate.toLocal().year}",
+                style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+              ),
+              trailing: Icon(Icons.calendar_today, color: !isDarkMode ? Colors.white : Colors.black),
+              onTap: () => selectDate(context),
+            ),
+
+            
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          "Start Time: $_eventStartTime",
+                          style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.schedule, color: !isDarkMode ? Colors.white : Colors.black),
+                          onPressed: () => selectStartTime(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 12.0),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          "End Time: $_eventEndTime",
+                          style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.timer_off, color: !isDarkMode ? Colors.white : Colors.black),
+                          onPressed: () => selectEndTime(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            
+            
+            SizedBox(height: 12.0),
+             Row(
+                children: [
+                  Expanded(
+                    child: 
+                     SizedBox(
+                    height: 40,
+                    child:
+                      TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Add Guests - Not Implemented Yet',
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                        labelStyle: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                      ),
+                      style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                      onChanged: (value) {
+                        setState(() {
+                          _eventGuests = value; // Add this line
+                        });
+                      },
+                    ),
+                     ),
+                  ),
+                  SizedBox(width: 12.0),
+                  Icon(Icons.group, color: !isDarkMode ? Colors.white : Colors.black),
+                ],
+              ),
+            SizedBox(height: 12.0),
+             Row(
+                children: [
+                  Expanded(
+                    child: 
+                     SizedBox(
+                    height: 40,
+                    child:
+                      TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Add Location',
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                        labelStyle: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                      ),
+                      style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                      onChanged: (value) {
+                        setState(() {
+                          _eventLocation = value; // Add this line
+                        });
+                      },
+                    ),
+                     ),
+                  ),
+                  SizedBox(width: 12.0),
+                  Icon(Icons.location_pin, color: !isDarkMode ? Colors.white : Colors.black),
+                ],
+              ),
+
+
+            SizedBox(height: 12.0),
+             SizedBox(
+              height: 80,
+              child:
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Add Description or Attachment',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                    labelStyle: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                  ),
+                  style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black),
+                  maxLines: 2,
+                  onChanged: (value) {
+                    setState(() {
+                      _eventDescription = value; // Add this line
+                    });
+                  },
+                  ),
+              ),
+            SizedBox(height: 15.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.brush, color: !isDarkMode ? Colors.white : Colors.black),
+                  onPressed: () => _showColorPicker(context),
+                ),
+                //SizedBox(width: 5),
+                 Text(
+                  'Choose Color:',
+                  style: TextStyle(
+                    color: !isDarkMode ? Colors.white : Colors.black,
+                    fontSize: 16,
+                  ),
+                ),
+                
+                
+                SizedBox(width: 30),
+              
+                
+                GestureDetector(
+                        onTap: () {
+                          _showColorPicker(context);
+                        },
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: selectedColor, // The color chosen by the user
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                        ),
+                      )
+                // Label
+               
+              ],
+            ),
+            SizedBox(height: 15.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                    onPressed: _togglePopup,
+                  child: Text("Cancel", style: TextStyle(color: !isDarkMode ? Colors.white : Colors.black)),
+                ),
+                SizedBox(width: 10.0),
+                ElevatedButton(
+                  onPressed: () {
+                    // Parse times (adjust as needed for your time format).
+                    final timeFormat = TimeOfDayFormat.H_colon_mm;
+                    final now = DateTime.now();
+                    TimeOfDay parseToTimeOfDay(String timeStr) {
+                      // Basic split by space or handle 24-hour time accordingly.
+                      // This example assumes "HH:MM" with optional AM/PM. 
+                      // Adjust for your specific time format.
+                      final parts = timeStr.split(' ');
+                      final hhmm = parts[0].split(':');
+                      int hour = int.tryParse(hhmm[0]) ?? 0;
+                      final minute = int.tryParse(hhmm[1]) ?? 0;
+                      final meridian = parts.length > 1 ? parts[1].toLowerCase() : '';
+                      if (meridian == 'pm' && hour < 12) hour += 12;
+                      if (meridian == 'am' && hour == 12) hour = 0;
+                      return TimeOfDay(hour: hour, minute: minute);
+                    }
+
+                    // Build full start/end DateTime from selected date + chosen times
+                    final startTimeOfDay = parseToTimeOfDay(_eventStartTime);
+                    final endTimeOfDay = parseToTimeOfDay(_eventEndTime);
+                    final startDateTime = DateTime(
+                      selectedDate.year,
+                      selectedDate.month,
+                      selectedDate.day,
+                      startTimeOfDay.hour,
+                      startTimeOfDay.minute,
+                    );
+                    final endDateTime = DateTime(
+                      selectedDate.year,
+                      selectedDate.month,
+                      selectedDate.day,
+                      endTimeOfDay.hour,
+                      endTimeOfDay.minute,
+                    );
+
+                  
+
+                    final result = _addNewEvent(
+                      _eventTitle.trim(),
+                      selectedColor,
+                      startDateTime,
+                      endDateTime,
+                      _eventDescription.trim(),
+                     _eventLocation.trim(),
+                    );
+
+                    String message;
+                    switch (result) {
+                      case 1:
+                        message = 'Event name is empty!';
+                        break;
+                      case 2:
+                        message = 'Event location is empty!';
+                        break;
+                      case 3:
+                        message = 'Event description is empty!';
+                        break;
+                      case 4:
+                        message = 'Start time can\'t be after end time!';
+                        break;
+                      case 5:
+                        message = 'Start or end time is empty!';
+                        break;
+                      case 10:
+                        // clear back all the field
+                        
+                        message = 'Event Added Successfully!';
+                        _togglePopup(); // If you prefer closing the popup on success
+                        break;
+                      default:
+                        message = 'Unknown error!';
+                        break;
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: !isDarkMode ? Colors.grey[800] : Colors.blue,
+                  ),
+                  child: Text("Save", style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    )
+    );
+  }
 }
+
+
+
 
 class WeeklyCalendarWidget extends StatefulWidget {
   final Function(DateTime) onDateSelected;
@@ -854,12 +1247,14 @@ class EventCardWidget extends StatelessWidget {
   final String startTime;
   final String endTime;
 
+
   const EventCardWidget({
     Key? key,
     required this.title,
     required this.color,
     required this.startTime,
     required this.endTime,
+
   }) : super(key: key);
 
   String _formatTime(String time) {
@@ -939,5 +1334,84 @@ class EventCardWidget extends StatelessWidget {
           ),
         ),
       );
+  }
+}
+
+class SuggestWidget extends StatelessWidget {
+  final IconData icon;
+  final String categoryTitle;
+  final String mainTitle;
+  final String descriptionTime;
+
+  const SuggestWidget({
+    Key? key,
+    required this.icon,
+    required this.categoryTitle,
+    required this.mainTitle,
+    required this.descriptionTime,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.0),
+      ),
+      child: Container(
+        width: 280.0,
+        decoration: BoxDecoration(
+          color: FlutterFlowTheme.of(context).secondaryBackground,
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        child: Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Icon(
+                    icon,
+                    color: FlutterFlowTheme.of(context).primary,
+                    size: 24.0,
+                  ),
+                  SizedBox(width: 12.0),
+                  Text(
+                    categoryTitle,
+                    style: FlutterFlowTheme.of(context).bodySmall.override(
+                          fontFamily: 'Inter',
+                          color: FlutterFlowTheme.of(context).primary,
+                          letterSpacing: 0.0,
+                        ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.0),
+              Text(
+                mainTitle,
+                style: FlutterFlowTheme.of(context).headlineSmall.override(
+                      fontFamily: 'Inter Tight',
+                      letterSpacing: 0.0,
+                    ),
+              ),
+              SizedBox(height: 8.0),
+              Text(
+                descriptionTime,
+                style: FlutterFlowTheme.of(context).bodyMedium.override(
+                      fontFamily: 'Inter',
+                      color: FlutterFlowTheme.of(context).secondaryText,
+                      letterSpacing: 0.0,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

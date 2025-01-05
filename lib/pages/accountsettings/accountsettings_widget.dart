@@ -9,10 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'accountsettings_model.dart';
+import 'package:pro_planner/pages/changepasswor/changepasswor_widget.dart';
 export 'accountsettings_model.dart';
 
-// import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-// import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class AccountsettingsWidget extends StatefulWidget {
   /// create a profile information, in theprofile information page there will be
@@ -316,6 +316,32 @@ class _AccountsettingsWidgetState extends State<AccountsettingsWidget> {
                                                       ),
                                             ),
                                           ],
+                                        ),
+                                        FFButtonWidget(
+                                          onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                            builder: (context) =>
+                                              ChangepassworWidget(),
+                                            ),
+                                          );
+                                          },
+                                          text: 'Change Password',
+                                          options: FFButtonOptions(
+                                          width: 150.0,
+                                          height: 40.0,
+                                          color: FlutterFlowTheme.of(context).primary,
+                                          textStyle: FlutterFlowTheme.of(context).subtitle2.override(
+                                              fontFamily: 'Inter',
+                                              color: Colors.white,
+                                            ),
+                                          borderSide: BorderSide(
+                                            color: Colors.transparent,
+                                            width: 1.0,
+                                          ),
+                                          borderRadius: BorderRadius.circular(8.0),
+                                          ),
                                         ),
                                       ].divide(SizedBox(width: 12.0)),
                                     ),

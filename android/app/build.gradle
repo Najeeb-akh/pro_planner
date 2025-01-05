@@ -33,7 +33,8 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = namespace = "com.example.pro_planner"
     compileSdk = 34
-    ndkVersion = "21.3.6528147"
+    ndkVersion = "25.1.8937393"
+    //21.3.6528147
     
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8

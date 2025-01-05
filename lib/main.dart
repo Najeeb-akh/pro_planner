@@ -12,6 +12,8 @@ import 'index.dart';
 import 'test.dart';
 import 'package:pro_planner/theme/theme_notifier.dart';
 
+import 'package:pro_planner/pages/chatbot/riveanimation.dart';
+
 class AuthProvider with ChangeNotifier {
   bool _isLoggedIn = false;
 
@@ -106,6 +108,7 @@ class _MyAppState extends State<MyApp> {
       child: Consumer<ThemeNotifier>(
         builder: (context, themeNotifier, child) {
           return MaterialApp(
+
               title: 'ProPlanner',
               theme: themeNotifier.currentTheme,
               home: Consumer<AuthProvider>(
@@ -114,6 +117,7 @@ class _MyAppState extends State<MyApp> {
                 },
               ) //LoginWidget(), //MainpageWidget(),
               );
+
         },
       ),
     );
