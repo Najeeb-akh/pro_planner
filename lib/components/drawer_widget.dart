@@ -8,7 +8,11 @@ import 'drawer_model.dart';
 import '/pages/accountsettings/accountsettings_widget.dart';
 import '/pages/preference_page/preference_page_widget.dart';
 import '/pages/other/other_widget.dart';
+import '/pages/login/login_widget.dart'; // Add this line
 export 'drawer_model.dart';
+
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DrawerWidget extends StatefulWidget {
   /// create a right side drawer, inside the drawer icon personal photo is in
@@ -40,6 +44,23 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     _model.maybeDispose();
 
     super.dispose();
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await firebase_auth.FirebaseAuth.instance.signOut();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Successfully signed out')),
+      );
+      // Navigate to the login page
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => LoginWidget()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to sign out: $e')),
+      );
+    }
   }
 
   @override
@@ -185,7 +206,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                   GestureDetector(
                     onTap: () {
-                       Navigator.push(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => OtherWidget(),
@@ -269,40 +290,49 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   ),
                 ].divide(SizedBox(height: 24.0)),
               ),
+              //
               GestureDetector(
-                onTap: () {
-                  // Handle sign out tap
+                onTap: () async {
+                  await _signOut();
                 },
                 child: Container(
-                  width: double.infinity,
-                  height: 50.0,
                   decoration: BoxDecoration(
-                    color: FlutterFlowTheme.of(context).primary,
-                    borderRadius: BorderRadius.circular(8.0),
+                    color: FlutterFlowTheme.of(context).primaryBackground,
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
                   child: Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(
-                        12.0, 12.0, 12.0, 12.0),
+                    padding:
+                        EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 16.0),
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Icon(
+                              Icons.logout,
+                              color: FlutterFlowTheme.of(context).error,
+                              size: 24.0,
+                            ),
+                            Text(
+                              'Sign Out',
+                              style: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .override(
+                                    fontFamily: 'Inter',
+                                    color: FlutterFlowTheme.of(context).error,
+                                    letterSpacing: 0.0,
+                                  ),
+                            ),
+                          ].divide(SizedBox(width: 12.0)),
+                        ),
                         Icon(
-                          Icons.logout_rounded,
-                          color: FlutterFlowTheme.of(context).info,
+                          Icons.chevron_right,
+                          color: FlutterFlowTheme.of(context).secondaryText,
                           size: 24.0,
                         ),
-                        Text(
-                          'Sign Out',
-                          style: FlutterFlowTheme.of(context)
-                              .bodyLarge
-                              .override(
-                                fontFamily: 'Inter',
-                                color: FlutterFlowTheme.of(context).info,
-                                letterSpacing: 0.0,
-                              ),
-                        ),
-                      ].divide(SizedBox(width: 12.0)),
+                      ],
                     ),
                   ),
                 ),
