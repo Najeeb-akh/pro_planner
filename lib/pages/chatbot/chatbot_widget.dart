@@ -14,7 +14,7 @@ import 'package:firebase_vertexai/firebase_vertexai.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:pro_planner/pages/mainpage/mainpage_model.dart';
 import 'package:pro_planner/pages/chatbot/riveanimation.dart';
-
+import 'package:speech_balloon/speech_balloon.dart';
 
 class ChatbotWidget extends StatefulWidget {
   /// create a generate by ai page, the page is for a chat bot, a small bar for
@@ -153,7 +153,8 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
     final today = DateTime.now();
 
     String messageTOrespons="today's date and time are : "+ today.toIso8601String() +", start answering :"+userMessage+".if you need more detailes for the answer take a look in my events , Here is my upcoming events: "+eventsToString()+
-    "reply with short answers, avoid writing with * and make dicisions based on the context of the event title only if the event title is not clear to you, ask me for more details";
+    "reply with short answers, avoid writing with * and make dicisions based on the context of the event title only if the event title is not clear to you, ask me for more details"+
+     "its okay if there are clashing events,but dont give or suggest an event that clash with other events";
 
     // Generate a response from the AI model
     try {
@@ -227,9 +228,12 @@ void ScheduleBiAI(String s) async{
       }
 
   final response = await model.generateContent(
-    [Content.text("i want you to help me "+ s +"imagine that you are my personal assistant," + "Here are all of my events: " + eventsToString() +
-           "reply with short answers, avoid writing with * and make dicisions based on the context of the event title only if the event title is not clear to you, dont ask me for more details,"+
-           "also make sure to take into consideration the prompt and event that i want to add, including suitable times based on common sense and suitable time based on events from the past if the titles of the events make sense to you.")],
+    [Content.text("i want you to help me "+ s +"imagine that you are my personal assistant," + "Here are all of my events, parse the events to title, start time end time location as needed: " + eventsToString() +
+           "reply with short answers, avoid writing with * "+
+           //"and make dicisions based on the context of the event title if it makes sense to you,"+
+           "also make sure to take into consideration the prompt and event that i want to add, including suitable times based on common sense and suitable time based on events from the past only if the titles of the events make sense to you."+
+           "ignore clashing events, if the clash occurs look at the starting time if you need"+
+           "preferably answer should include the event title (new one not from previous eventsr) and the time of the event in readable format, and location, add small describtion if needed")],
   );
   setState(() {
     _messages.add(ChatBubbleWidget(
@@ -312,8 +316,8 @@ void ScheduleBiAI(String s) async{
                           ),
                           child: Padding(
                             padding: EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 16.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
                                   alignment: AlignmentDirectional(0.0, -1.0),
@@ -322,42 +326,47 @@ void ScheduleBiAI(String s) async{
                                         color: Colors.transparent,
                                       child:MyRiveAnimation(),
                                     ),
-                                // Text(
-                                //   //'AI Assistant',
-                                //   _getGreeting(),
-                                  
-                                //   style: FlutterFlowTheme.of(context).headlineSmall.override(
-                                //         fontFamily: 'Inter Tight',
-                                //         letterSpacing: 0.0,
-                                //       ),
-                                // ),
-                                FutureBuilder<String>(
-                                  future: Future.value(rrespond),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
-                                      return CircularProgressIndicator();
-                                    } else if (snapshot.hasError) {
-                                      return Text(
-                                        'Error: ${snapshot.error}',
+                                
+                                Expanded(
+                                  child: SpeechBalloon(
+                                    nipLocation: NipLocation.left,
+                                    nipHeight: 13,
+                                    color: Color(0xFFCDC1FF).withOpacity(0.8),
+                                    borderRadius: 12.0,
+                                    height: 100,
+                                    width: 150,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(12.0),
+                                      child: FutureBuilder<String>(
+                                        future: Future.value(rrespond),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return CircularProgressIndicator();
+                                          } else if (snapshot.hasError) {
+                                            return Text(
+                                              'Error: ${snapshot.error}',
+                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                    fontFamily: 'Inter',
+                                                    color: FlutterFlowTheme.of(context).secondaryText,
+                                                    letterSpacing: 0.0,
+                                                  ),
+                                            );
+                                          } else {
+                                            return Text(
+                                              snapshot.data ?? '',
                                         style: FlutterFlowTheme.of(context).bodyMedium.override(
                                               fontFamily: 'Inter',
                                               color: FlutterFlowTheme.of(context).secondaryText,
                                               letterSpacing: 0.0,
                                             ),
-                                      );
-                                    } else {
-                                      return Text(
-                                        snapshot.data ?? '',
-                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                        fontFamily: 'Inter',
-                                        color: FlutterFlowTheme.of(context).secondaryText,
-                                        letterSpacing: 0.0,
+                                            );
+                                          }
+                                        },
                                       ),
-                                      );
-                                    }
-                                  },
+                                    ),
+                                  ),
                                 ),
-                              ].divide(SizedBox(height: 12.0)),
+                              ],
                             ),
                           ),
                         ),

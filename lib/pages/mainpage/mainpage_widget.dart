@@ -621,182 +621,41 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
                               ),
                             ),
                           
-                          Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(
-                                16.0, 0.0, 16.0, 0.0),
-                            child: Container(
-                              width: MediaQuery.sizeOf(context).width * 1.0,
-                              height: 190.0,
-                              decoration: BoxDecoration(),
-                              child: ListView(
-                                padding: EdgeInsets.fromLTRB(
-                                  16.0,
-                                  0,
-                                  16.0,
-                                  0,
-                                ),
-                                primary: false,
-                                scrollDirection: Axis.horizontal,
-                                children: [
-                                  // suggestion card sprint 2
-                                  // Material(
-                                  //   color: Colors.transparent,
-                                  //   elevation: 2.0,
-                                  //   shape: RoundedRectangleBorder(
-                                  //     borderRadius: BorderRadius.circular(16.0),
-                                  //   ),
-                                  //   child: Container(
-                                  //     width: 280.0,
-                                  //     height: double.infinity,
-                                  //     decoration: BoxDecoration(
-                                  //       color: FlutterFlowTheme.of(context)
-                                  //           .secondaryBackground,
-                                  //       borderRadius: BorderRadius.circular(16.0),
-                                  //     ),
-                                  //     child: Padding(
-                                  //       padding: EdgeInsetsDirectional.fromSTEB(
-                                  //           16.0, 16.0, 16.0, 16.0),
-                                  //       child: Column(
-                                  //         mainAxisSize: MainAxisSize.min,
-                                  //         mainAxisAlignment:
-                                  //             MainAxisAlignment.center,
-                                  //         crossAxisAlignment:
-                                  //             CrossAxisAlignment.start,
-                                  //         children: [
-                                  //           Row(
-                                  //             mainAxisSize: MainAxisSize.max,
-                                  //             children: [
-                                  //               Icon(
-                                  //                 Icons.fitness_center,
-                                  //                 color:
-                                  //                     FlutterFlowTheme.of(context)
-                                  //                         .primary,
-                                  //                 size: 24.0,
-                                  //               ),
-                                  //               Text(
-                                  //                 'Fitness Suggestion',
-                                  //                 style:
-                                  //                     FlutterFlowTheme.of(context)
-                                  //                         .bodySmall
-                                  //                         .override(
-                                  //                           fontFamily: 'Inter',
-                                  //                           color:
-                                  //                               FlutterFlowTheme.of(
-                                  //                                       context)
-                                  //                                   .primary,
-                                  //                           letterSpacing: 0.0,
-                                  //                         ),
-                                  //               ),
-                                  //             ].divide(SizedBox(width: 12.0)),
-                                  //           ),
-                                  //           Text(
-                                  //             'Add gym to your schedule',
-                                  //             style: FlutterFlowTheme.of(context)
-                                  //                 .headlineSmall
-                                  //                 .override(
-                                  //                   fontFamily: 'Inter Tight',
-                                  //                   letterSpacing: 0.0,
-                                  //                 ),
-                                  //           ),
-                                  //           Text(
-                                  //             'You have free time today at 5 PM',
-                                  //             style: FlutterFlowTheme.of(context)
-                                  //                 .bodyMedium
-                                  //                 .override(
-                                  //                   fontFamily: 'Inter',
-                                  //                   color:
-                                  //                       FlutterFlowTheme.of(context)
-                                  //                           .secondaryText,
-                                  //                   letterSpacing: 0.0,
-                                  //                 ),
-                                  //           ),
-                                  //         ].divide(SizedBox(height: 8.0)),
-                                  //       ),
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                 
-                                 //suggestion card sprint 2
-                                  // Material(
-                                  //   color: Colors.transparent,
-                                  //   elevation: 2.0,
-                                  //   shape: RoundedRectangleBorder(
-                                  //     borderRadius: BorderRadius.circular(16.0),
-                                  //   ),
-                                  //   child: Container(
-                                  //     width: 280.0,
-                                  //     decoration: BoxDecoration(
-                                  //       color: FlutterFlowTheme.of(context)
-                                  //           .secondaryBackground,
-                                  //       borderRadius: BorderRadius.circular(16.0),
-                                  //     ),
-                                  //     child: Padding(
-                                  //       padding: EdgeInsetsDirectional.fromSTEB(
-                                  //           16.0, 16.0, 16.0, 16.0),
-                                  //       child: Column(
-                                  //         mainAxisSize: MainAxisSize.min,
-                                  //         mainAxisAlignment:
-                                  //             MainAxisAlignment.center,
-                                  //         crossAxisAlignment:
-                                  //             CrossAxisAlignment.start,
-                                  //         children: [
-                                  //           Row(
-                                  //             mainAxisSize: MainAxisSize.max,
-                                  //             children: [
-                                  //               Icon(
-                                  //                 Icons.work,
-                                  //                 color:
-                                  //                     FlutterFlowTheme.of(context)
-                                  //                         .secondary,
-                                  //                 size: 24.0,
-                                  //               ),
-                                  //               Text(
-                                  //                 'Work Suggestion',
-                                  //                 style:
-                                  //                     FlutterFlowTheme.of(context)
-                                  //                         .bodySmall
-                                  //                         .override(
-                                  //                           fontFamily: 'Inter',
-                                  //                           color:
-                                  //                               FlutterFlowTheme.of(
-                                  //                                       context)
-                                  //                                   .secondary,
-                                  //                           letterSpacing: 0.0,
-                                  //                         ),
-                                  //               ),
-                                  //             ].divide(SizedBox(width: 12.0)),
-                                  //           ),
-                                  //           Text(
-                                  //             'Schedule team meeting',
-                                  //             style: FlutterFlowTheme.of(context)
-                                  //                 .headlineSmall
-                                  //                 .override(
-                                  //                   fontFamily: 'Inter Tight',
-                                  //                   letterSpacing: 0.0,
-                                  //                 ),
-                                  //           ),
-                                  //           Text(
-                                  //             'Wednesday afternoon is open',
-                                  //             style: FlutterFlowTheme.of(context)
-                                  //                 .bodyMedium
-                                  //                 .override(
-                                  //                   fontFamily: 'Inter',
-                                  //                   color:
-                                  //                       FlutterFlowTheme.of(context)
-                                  //                           .secondaryText,
-                                  //                   letterSpacing: 0.0,
-                                  //                 ),
-                                  //           ),
-                                  //         ].divide(SizedBox(height: 8.0)),
-                                  //       ),
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                ]
-                                //.divide(SizedBox(width: 16.0)),
-                              ),
-                            ),
-                          ),
+                          // Padding(
+                          //   padding: EdgeInsetsDirectional.fromSTEB(
+                          //       16.0, 0.0, 16.0, 0.0),
+                          //   child: Container(
+                          //     width: MediaQuery.sizeOf(context).width * 1.0,
+                          //     height: 190.0,
+                          //     decoration: BoxDecoration(),
+                          //     child: ListView(
+                          //       padding: EdgeInsets.fromLTRB(
+                          //         16.0,
+                          //         0,
+                          //         16.0,
+                          //         0,
+                          //       ),
+                          //       primary: false,
+                          //       scrollDirection: Axis.horizontal,
+                          //       children: [
+                          //         SuggestWidget(
+                          //           icon: Icons.fitness_center,
+                          //           categoryTitle: 'Fitness Suggestion',
+                          //           mainTitle: 'Add gym to your schedule',
+                          //           descriptionTime: 'You have free time today at 5 PM',
+                          //         ),
+                          //         SizedBox(width: 16.0),
+                          //         SuggestWidget(
+                          //           icon: Icons.work,
+                          //           categoryTitle: 'Work Suggestion',
+                          //           mainTitle: 'Schedule team meeting',
+                          //           descriptionTime: 'Wednesday afternoon is open',
+                          //         ),
+                          //       ]
+                          //                                       //.divide(SizedBox(width: 16.0)),
+                          //     ),
+                          //   ),
+                          // ),
                           
                           
                           //generate with ai button sprint 2
@@ -1475,5 +1334,84 @@ class EventCardWidget extends StatelessWidget {
           ),
         ),
       );
+  }
+}
+
+class SuggestWidget extends StatelessWidget {
+  final IconData icon;
+  final String categoryTitle;
+  final String mainTitle;
+  final String descriptionTime;
+
+  const SuggestWidget({
+    Key? key,
+    required this.icon,
+    required this.categoryTitle,
+    required this.mainTitle,
+    required this.descriptionTime,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.0),
+      ),
+      child: Container(
+        width: 280.0,
+        decoration: BoxDecoration(
+          color: FlutterFlowTheme.of(context).secondaryBackground,
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        child: Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Icon(
+                    icon,
+                    color: FlutterFlowTheme.of(context).primary,
+                    size: 24.0,
+                  ),
+                  SizedBox(width: 12.0),
+                  Text(
+                    categoryTitle,
+                    style: FlutterFlowTheme.of(context).bodySmall.override(
+                          fontFamily: 'Inter',
+                          color: FlutterFlowTheme.of(context).primary,
+                          letterSpacing: 0.0,
+                        ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.0),
+              Text(
+                mainTitle,
+                style: FlutterFlowTheme.of(context).headlineSmall.override(
+                      fontFamily: 'Inter Tight',
+                      letterSpacing: 0.0,
+                    ),
+              ),
+              SizedBox(height: 8.0),
+              Text(
+                descriptionTime,
+                style: FlutterFlowTheme.of(context).bodyMedium.override(
+                      fontFamily: 'Inter',
+                      color: FlutterFlowTheme.of(context).secondaryText,
+                      letterSpacing: 0.0,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
