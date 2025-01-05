@@ -1,3 +1,4 @@
+import 'package:pro_planner/pages/signup/signup_widget.dart';
 import 'package:pro_planner/index.dart';
 import 'package:pro_planner/main.dart';
 
@@ -403,17 +404,38 @@ class _LoginWidgetState extends State<LoginWidget> {
                                   letterSpacing: 0.0,
                                 ),
                           ),
-                          Text(
-                            'Sign Up',
-                            style: FlutterFlowTheme.of(context)
-                                .bodyMedium
-                                .override(
-                                  fontFamily: 'Inter',
-                                  color: Colors.white,
-                                  letterSpacing: 0.0,
-                                  fontWeight: FontWeight.bold,
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SignupWidget(),
                                 ),
+                              );
+                            },
+                            child: Text(
+                              'Sign Up',
+                              style: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .override(
+                                    fontFamily: 'Inter',
+                                    color: Colors.white,
+                                    letterSpacing: 0.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
                           ),
+                          // Text(
+                          //   'Sign Up',
+                          //   style: FlutterFlowTheme.of(context)
+                          //       .bodyMedium
+                          //       .override(
+                          //         fontFamily: 'Inter',
+                          //         color: Colors.white,
+                          //         letterSpacing: 0.0,
+                          //         fontWeight: FontWeight.bold,
+                          //       ),
+                          // ),
                         ].divide(SizedBox(width: 8.0)),
                       ),
                     ].divide(SizedBox(height: 24.0)),

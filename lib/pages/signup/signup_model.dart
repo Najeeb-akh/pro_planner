@@ -2,12 +2,12 @@ import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
-import 'signup_widget.dart' show LoginWidget;
+import 'signup_widget.dart' show SignupWidget;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-class LoginModel extends FlutterFlowModel<LoginWidget> {
+class SignupModel extends FlutterFlowModel<SignupWidget> {
   ///  State fields for stateful widgets in this page.
 
   // State field(s) for TextField widget.
@@ -19,6 +19,16 @@ class LoginModel extends FlutterFlowModel<LoginWidget> {
   TextEditingController? textController2;
   late bool passwordVisibility;
   String? Function(BuildContext, String?)? textController2Validator;
+
+// State field(s) for Name TextField widget.
+  FocusNode? textFieldFocusNode3;
+  TextEditingController? textController3;
+  String? Function(BuildContext, String?)? textController3Validator;
+
+  // State field(s) for Description TextField widget.
+  FocusNode? textFieldFocusNode4;
+  TextEditingController? textController4;
+  String? Function(BuildContext, String?)? textController4Validator;
 
   @override
   void initState(BuildContext context) {
@@ -32,5 +42,10 @@ class LoginModel extends FlutterFlowModel<LoginWidget> {
 
     textFieldFocusNode2?.dispose();
     textController2?.dispose();
+
+    textController3?.dispose();
+    textFieldFocusNode3?.dispose();
+    textController4?.dispose();
+    textFieldFocusNode4?.dispose();
   }
 }

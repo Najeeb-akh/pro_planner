@@ -14,29 +14,35 @@ import 'package:provider/provider.dart';
 import 'signup_model.dart';
 export 'signup_model.dart';
 
-class LoginWidget extends StatefulWidget {
-  /// create a login page with abstract griedent color background
-  const LoginWidget({super.key});
+class SignupWidget extends StatefulWidget {
+  /// create a signup page with abstract gradient color background
+  const SignupWidget({super.key});
 
   @override
-  State<LoginWidget> createState() => _LoginWidgetState();
+  State<SignupWidget> createState() => _SignupWidgetState();
 }
 
-class _LoginWidgetState extends State<LoginWidget> {
-  late LoginModel _model;
+class _SignupWidgetState extends State<SignupWidget> {
+  late SignupModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => LoginModel());
+    _model = createModel(context, () => SignupModel());
 
     _model.textController1 ??= TextEditingController();
     _model.textFieldFocusNode1 ??= FocusNode();
 
     _model.textController2 ??= TextEditingController();
     _model.textFieldFocusNode2 ??= FocusNode();
+
+    _model.textController3 ??= TextEditingController();
+    _model.textFieldFocusNode3 ??= FocusNode();
+
+    _model.textController4 ??= TextEditingController();
+    _model.textFieldFocusNode4 ??= FocusNode();
   }
 
   @override
@@ -46,17 +52,25 @@ class _LoginWidgetState extends State<LoginWidget> {
     super.dispose();
   }
 
-  Future<void> _signIn() async {
+  Future<void> _signUp() async {
     try {
-      final userCredential =
-          await firebase_auth.FirebaseAuth.instance.signInWithEmailAndPassword(
+      final userCredential = await firebase_auth.FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
         email: _model.textController1!.text,
         password: _model.textController2!.text,
       );
+      // Save additional user information to Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user?.uid)
+          .set({
+        'name': _model.textController3!.text,
+        'description': _model.textController4!.text,
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
-                'Successfully logged in as ${userCredential.user?.email}')),
+                'Successfully signed up as ${userCredential.user?.email}')),
       );
       // Navigate to the main page or home page
       Navigator.of(context).pushReplacement(
@@ -64,15 +78,13 @@ class _LoginWidgetState extends State<LoginWidget> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to sign in: $e')),
+        SnackBar(content: Text('Failed to sign up: $e')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    //final authProvider = Provider.of<AuthProvider>(context);
-
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -145,7 +157,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                         ),
                       ),
                       Text(
-                        'Welcome Back',
+                        'Create Account',
                         style:
                             FlutterFlowTheme.of(context).displaySmall.override(
                                   fontFamily: 'Inter Tight',
@@ -155,7 +167,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                                 ),
                       ),
                       Text(
-                        'Sign in to continue your journey',
+                        'Sign up to start your journey',
                         style: FlutterFlowTheme.of(context).bodyLarge.override(
                               fontFamily: 'Inter',
                               color: Color(0xFFE0E0E0),
@@ -182,6 +194,76 @@ class _LoginWidgetState extends State<LoginWidget> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  TextFormField(
+                                    controller: _model.textController3,
+                                    focusNode: _model.textFieldFocusNode3,
+                                    autofocus: false,
+                                    obscureText: false,
+                                    decoration: InputDecoration(
+                                      labelText: 'Name',
+                                      labelStyle: FlutterFlowTheme.of(context)
+                                          .bodyMedium
+                                          .override(
+                                            fontFamily: 'Inter',
+                                            color: FlutterFlowTheme.of(context)
+                                                .alternate,
+                                            letterSpacing: 0.0,
+                                          ),
+                                      hintStyle: FlutterFlowTheme.of(context)
+                                          .bodyMedium
+                                          .override(
+                                            fontFamily: 'Inter',
+                                            letterSpacing: 0.0,
+                                          ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Colors.white,
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Color(0x00000000),
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Color(0x00000000),
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      focusedErrorBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Color(0x00000000),
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      filled: true,
+                                      fillColor: Color(0x1AFFFFFF),
+                                    ),
+                                    style: FlutterFlowTheme.of(context)
+                                        .bodyLarge
+                                        .override(
+                                          fontFamily: 'Inter',
+                                          color: FlutterFlowTheme.of(context)
+                                              .alternate,
+                                          letterSpacing: 0.0,
+                                        ),
+                                    minLines: 1,
+                                    //keyboardType: TextInputType.name,
+                                    validator: _model.textController3Validator
+                                        .asValidator(context),
+                                  ),
+
                                   TextFormField(
                                     controller: _model.textController1,
                                     focusNode: _model.textFieldFocusNode1,
@@ -251,6 +333,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                                     validator: _model.textController1Validator
                                         .asValidator(context),
                                   ),
+
                                   TextFormField(
                                     controller: _model.textController2,
                                     focusNode: _model.textFieldFocusNode2,
@@ -333,25 +416,94 @@ class _LoginWidgetState extends State<LoginWidget> {
                                     validator: _model.textController2Validator
                                         .asValidator(context),
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        'Forgot Password?',
-                                        style: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .override(
-                                              fontFamily: 'Inter',
-                                              color: Colors.white,
-                                              letterSpacing: 0.0,
-                                            ),
+                                  TextFormField(
+                                    controller: _model.textController4,
+                                    focusNode: _model.textFieldFocusNode4,
+                                    autofocus: false,
+                                    obscureText: false,
+                                    decoration: InputDecoration(
+                                      labelText: 'Description',
+                                      labelStyle: FlutterFlowTheme.of(context)
+                                          .bodyMedium
+                                          .override(
+                                            fontFamily: 'Inter',
+                                            color: FlutterFlowTheme.of(context)
+                                                .alternate,
+                                            letterSpacing: 0.0,
+                                          ),
+                                      hintStyle: FlutterFlowTheme.of(context)
+                                          .bodyMedium
+                                          .override(
+                                            fontFamily: 'Inter',
+                                            letterSpacing: 0.0,
+                                          ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Colors.white,
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
                                       ),
-                                    ],
+                                      focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Color(0x00000000),
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Color(0x00000000),
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      focusedErrorBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Color(0x00000000),
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      filled: true,
+                                      fillColor: Color(0x1AFFFFFF),
+                                    ),
+                                    style: FlutterFlowTheme.of(context)
+                                        .bodyLarge
+                                        .override(
+                                          fontFamily: 'Inter',
+                                          color: FlutterFlowTheme.of(context)
+                                              .alternate,
+                                          letterSpacing: 0.0,
+                                        ),
+                                    minLines: 1,
+                                    //keyboardType: TextInputType.emailAddress,
+                                    validator: _model.textController4Validator
+                                        .asValidator(context),
                                   ),
+                                  // Row(
+                                  //   mainAxisSize: MainAxisSize.max,
+                                  //   mainAxisAlignment: MainAxisAlignment.end,
+                                  //   children: [
+                                  //     Text(
+                                  //       'Forgot Password?',
+                                  //       style: FlutterFlowTheme.of(context)
+                                  //           .bodyMedium
+                                  //           .override(
+                                  //             fontFamily: 'Inter',
+                                  //             color: Colors.white,
+                                  //             letterSpacing: 0.0,
+                                  //           ),
+                                  //     ),
+                                  //   ],
+                                  // ),
                                   FFButtonWidget(
                                     onPressed: () {
-                                      _signIn();
+                                      _signUp();
                                       // Navigator.pushReplacement(
                                       //   context,
                                       //   MaterialPageRoute(
@@ -359,7 +511,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                                       //           MainpageWidget()),
                                       // );
                                     },
-                                    text: 'Sign In',
+                                    text: 'Sign Up',
                                     options: FFButtonOptions(
                                       width: MediaQuery.sizeOf(context).width *
                                           1.0,
@@ -394,7 +546,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Don\'t have an account?',
+                            'Already have an account?',
                             style: FlutterFlowTheme.of(context)
                                 .bodyMedium
                                 .override(
@@ -403,17 +555,38 @@ class _LoginWidgetState extends State<LoginWidget> {
                                   letterSpacing: 0.0,
                                 ),
                           ),
-                          Text(
-                            'Sign Up',
-                            style: FlutterFlowTheme.of(context)
-                                .bodyMedium
-                                .override(
-                                  fontFamily: 'Inter',
-                                  color: Colors.white,
-                                  letterSpacing: 0.0,
-                                  fontWeight: FontWeight.bold,
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginWidget(),
                                 ),
+                              );
+                            },
+                            child: Text(
+                              'Sign In',
+                              style: FlutterFlowTheme.of(context)
+                                  .bodyMedium
+                                  .override(
+                                    fontFamily: 'Inter',
+                                    color: Colors.white,
+                                    letterSpacing: 0.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
                           ),
+                          // Text(
+                          //   'Sign In',
+                          //   style: FlutterFlowTheme.of(context)
+                          //       .bodyMedium
+                          //       .override(
+                          //         fontFamily: 'Inter',
+                          //         color: Colors.white,
+                          //         letterSpacing: 0.0,
+                          //         fontWeight: FontWeight.bold,
+                          //       ),
+                          // ),
                         ].divide(SizedBox(width: 8.0)),
                       ),
                     ].divide(SizedBox(height: 24.0)),
