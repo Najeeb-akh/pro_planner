@@ -43,9 +43,10 @@ class SignupModel extends FlutterFlowModel<SignupWidget> {
     textFieldFocusNode2?.dispose();
     textController2?.dispose();
 
-    textController3?.dispose();
+    textController3?.dispose(); //name
     textFieldFocusNode3?.dispose();
-    textController4?.dispose();
+
+    textController4?.dispose(); //description
     textFieldFocusNode4?.dispose();
   }
 }

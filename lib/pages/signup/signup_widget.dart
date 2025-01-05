@@ -60,13 +60,15 @@ class _SignupWidgetState extends State<SignupWidget> {
         password: _model.textController2!.text,
       );
       // Save additional user information to Firestore
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user?.uid)
-          .set({
-        'name': _model.textController3!.text,
-        'description': _model.textController4!.text,
-      });
+      // await FirebaseFirestore.instance
+      //     .collection('users')
+      //     .doc(userCredential.user?.uid)
+      //     .set({
+      //   'name': _model.textController3!.text,
+      //   'description': _model.textController4!.text,
+      //   'email': _model.textController1!.text,
+      //   'createdAt': Timestamp.now(),
+      // });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
