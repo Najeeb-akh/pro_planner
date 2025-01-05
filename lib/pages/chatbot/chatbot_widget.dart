@@ -11,8 +11,10 @@ import 'chatbot_model.dart';
 export 'chatbot_model.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
-//import mainpage_model.dart;
+import 'package:firebase_database/firebase_database.dart';
 import 'package:pro_planner/pages/mainpage/mainpage_model.dart';
+import 'package:pro_planner/pages/chatbot/riveanimation.dart';
+
 
 class ChatbotWidget extends StatefulWidget {
   /// create a generate by ai page, the page is for a chat bot, a small bar for
@@ -23,16 +25,7 @@ class ChatbotWidget extends StatefulWidget {
   @override
   State<ChatbotWidget> createState() => _ChatbotWidgetState();
 }
-String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good Morning, Najeeb';
-    } else if (hour < 18) {
-      return 'Good Afternoon, Najeeb';
-    } else {
-      return 'Good Evening, Najeeb';
-    }
-  }
+
 
 class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserver {
   late ChatbotModel _model;
@@ -40,19 +33,36 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
   bool _isLoading = false;
   final ScrollController _scrollController = ScrollController();
   final List<ChatBubbleWidget> _messages = [];
-  final model = FirebaseVertexAI.instance.generativeModel(model: 'gemini-1.5-flash-001');
+  final model = FirebaseVertexAI.instance.generativeModel(model: 'gemini-1.5-flash-002');
   final ValueNotifier<bool> _messageNotifier = ValueNotifier(false);
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
+  String rrespond = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _model = createModel(context, () => ChatbotModel());
-
+    _fetchEvents();
     _model.textController ??= TextEditingController();
     _model.textFieldFocusNode ??= FocusNode();
+    model.generateContent([Content.text("hi my name is adam respond with 2 lovely emojis and a greeting message based on time and weather one line at maximum")]).then((response) {
+      setState(() {
+        rrespond = response.text ?? '';
+      });
+    });
+      
+  }
+  //Fetch schedules from Firebase based on the query
+    List<Event> _events = [];
+   void _fetchEvents() {
+    _databaseReference.onValue.listen((event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>;
+      setState(() {
+        _events = data.values.map((e) => Event.fromMap(e)).toList();
+      });
+    });
   }
 
   @override
@@ -61,7 +71,6 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
     _model.dispose();
     _scrollController.dispose();
     _messageNotifier.dispose();
-
     super.dispose();
   }
 
@@ -79,41 +88,101 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
       }
     });
   }
+  
+  Future<String> _firstResponse() async {
+      final response = await model.generateContent(
+          [Content.text("hi my name is adam")],
+        );
+        final responseText = response.text ?? '';
+        // _messages.add(ChatBubbleWidget(
+        //   isAi: false,
+        //   title: 'for testing',
+        //   message: responseText,
+        // ));
+        return responseText;
+    }
+    //  final prompt = "Write a story about a magic backpack.";
+    //  final response = model.generateContent(prompt);
+
 
   void _sendMessage() async {
-    if (_model.textController!.text.isNotEmpty) {
-      setState(() {
-        _messages.add(ChatBubbleWidget(
-          isAi: false,
-          title: 'You',
-          message: _model.textController!.text,
-         ));
-        _isLoading = true;
-      });
-      final userMessage = _model.textController!.text;
-      _model.textController!.clear();
+  if (_model.textController!.text.isNotEmpty) {
+    final userMessage = _model.textController!.text;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
+    // Clear the text input field after sending the message
+    _model.textController!.clear();
 
-      _messageNotifier.value = true;
+    // Add the user's message to the list of messages and update the UI
+    setState(() {
+      _messages.add(ChatBubbleWidget(
+        isAi: false,
+        title: 'You',
+        message: userMessage,
+      ));
+      _isLoading = true;
+    });
 
-      final response = await model.generateContent(
-        [Content.text(userMessage)],
+    _messageNotifier.value = true;
+    // Scroll to the bottom of the list after the frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeOut,
       );
-      if (response.text != null) {
+    });
+       // Listen for changes in the database reference
+      
+    // Convert `_events` to a string with all event details
+    // Map each event in the _events list to a formatted string
+    
+      String eventsToString() {
+        return _events.map((event) {
+          return 'Title: ${event.title}, '
+                'Color: ${event.color}, '
+                'Start Time: ${event.startTime}, '
+                'End Time: ${event.endTime}, '
+                'Description: ${event.description}, '
+                'Location: ${event.location}';
+        }).join('\n');
+      }
+
+
+
+    // today's date
+    final today = DateTime.now();
+
+    String messageTOrespons="today's date and time are : "+ today.toIso8601String() +", start answering :"+userMessage+".if you need more detailes for the answer take a look in my events , Here is my upcoming events: "+eventsToString()+
+    "reply with short answers, avoid writing with * and make dicisions based on the context of the event title only if the event title is not clear to you, ask me for more details";
+
+    // Generate a response from the AI model
+    try {
+      final response = await model.generateContent(
+        [Content.text(messageTOrespons)],
+      );
+      // _messages.add(ChatBubbleWidget(
+      //   isAi: false,
+      //   title: 'for testing',
+      //   message: messageTOrespons,
+      // ));
+      if (response.text != null && response.text!.isNotEmpty) {
         setState(() {
           _messages.add(ChatBubbleWidget(
             isAi: true,
             title: 'AI Assistant',
             message: response.text!,
-           ));
+          ));
           _isLoading = false;
+        });
+        
+      } else {
+        setState(() {
+          _isLoading = false;
+          _messages.add(ChatBubbleWidget(
+            isAi: true,
+            title: 'AI Assistant',
+            message: "I was unable to generate an answer",
+          ));
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _scrollController.animateTo(
@@ -122,14 +191,55 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
             curve: Curves.easeOut,
           );
         });
-      } else {
-        setState(() {
-          _isLoading = false;
-        });
       }
+    } catch (error) {
+      setState(() {
+        _isLoading = false;
+        _messages.add(ChatBubbleWidget(
+          isAi: true,
+          title: 'AI Assistant',
+          message: "An error occurred during API call",
+        ));
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+      print("Error summarizing text: $error");
     }
   }
+}
 
+void ScheduleBiAI(String s) async{
+  
+      String eventsToString() {
+        return _events.map((event) {
+          return 'Title: ${event.title}, '
+                'Color: ${event.color}, '
+                'Start Time: ${event.startTime}, '
+                'End Time: ${event.endTime}, '
+                'Description: ${event.description}, '
+                'Location: ${event.location}';
+        }).join('\n');
+      }
+
+  final response = await model.generateContent(
+    [Content.text("i want you to help me "+ s +"imagine that you are my personal assistant," + "Here are all of my events: " + eventsToString() +
+           "reply with short answers, avoid writing with * and make dicisions based on the context of the event title only if the event title is not clear to you, dont ask me for more details,"+
+           "also make sure to take into consideration the prompt and event that i want to add, including suitable times based on common sense and suitable time based on events from the past if the titles of the events make sense to you.")],
+  );
+  setState(() {
+    _messages.add(ChatBubbleWidget(
+      isAi: true,
+      title: 'AI Assistant',
+      message: response.text!,
+    ));
+    _isLoading = false;
+  });
+}
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -141,68 +251,49 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
         key: scaffoldKey,
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         resizeToAvoidBottomInset: true,
-        appBar: PreferredSize(
-          preferredSize:
-              Size.fromHeight(MediaQuery.sizeOf(context).height * 0.1),
-          child: AppBar(
-            backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
-            iconTheme: IconThemeData(color: FlutterFlowTheme.of(context).secondaryBackground),
-            leadingWidth: 90000.0,
-            automaticallyImplyLeading: true,
-            leading: Opacity(
-              opacity: 1,
-              
-              child: Align(
-                alignment: AlignmentDirectional(1.0, 1.0),
-                child: Row(
-                  children: [
-                    
-                    IconButton(
-                      onPressed: () {
-                      scaffoldKey.currentState?.openDrawer();
-                    },
-                    icon: Icon(
-                      Icons.menu,
-                      color: FlutterFlowTheme.of(context).primaryText,
-                      size: 24,
-                    ),
-                  iconSize: 24,
-                ),
-                    Text(
-                      _getGreeting(),
-                      style:
-                          FlutterFlowTheme.of(context).headlineMedium.override(
-                                fontFamily: 'Inter Tight',
-                                color: FlutterFlowTheme.of(context).primaryText,
-                                letterSpacing: 0.0,
-                                fontWeight: FontWeight.w600,
-                              ),
-                    ),
-                  ],
-                ),
-              ),
+        appBar: AppBar(
+          backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
+          iconTheme: IconThemeData(color: FlutterFlowTheme.of(context).secondaryBackground),
+          automaticallyImplyLeading: true,
+          leading: IconButton(
+            onPressed: () {
+              // Navigate back to the main page
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => MainpageWidget()),
+              );
+            },
+            icon: Icon(
+              Icons.arrow_back,
+              color: FlutterFlowTheme.of(context).primaryText,
+              size: 24,
             ),
-            actions: [
-             
-            ],
-            centerTitle: false,
-            toolbarHeight: MediaQuery.sizeOf(context).height * 0.2,
           ),
+          title: Text(
+            //show the greeting message
+            'AI Assistant',
+            // hda sho ekon mktoob b3d el icon up bar
+            //_getGreeting(),
+            style: FlutterFlowTheme.of(context).headlineMedium.override(
+                  fontFamily: 'Inter Tight',
+                  color: FlutterFlowTheme.of(context).primaryText,
+                  letterSpacing: 0.0,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),  
         ),
-        
         body: SingleChildScrollView(
           //controller: _scrollController,
           child: Container(
             width: MediaQuery.sizeOf(context).width * 1.0,
             height: _isKeyboardVisible
-                ? MediaQuery.sizeOf(context).height *0.5
-                : MediaQuery.sizeOf(context).height * 0.86,
+                ? MediaQuery.sizeOf(context).height * 0.55
+                : MediaQuery.sizeOf(context).height * 0.85,
             child: SafeArea(
               top: false,
               child: Align(
                 alignment: AlignmentDirectional(0.0, -1.0),
                 child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+                  padding: EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 0.0),
                   child: Column(
                     children:[
                       // header still view
@@ -224,113 +315,88 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  'AI Assistant',
-                                  style: FlutterFlowTheme.of(context).headlineSmall.override(
-                                        fontFamily: 'Inter Tight',
-                                        letterSpacing: 0.0,
-                                      ),
-                                ),
-                                Text(
-                                  'How can I help you today?',
+                                Container(
+                                  alignment: AlignmentDirectional(0.0, -1.0),
+                                      height: 150,
+                                      width: 150,
+                                        color: Colors.transparent,
+                                      child:MyRiveAnimation(),
+                                    ),
+                                // Text(
+                                //   //'AI Assistant',
+                                //   _getGreeting(),
+                                  
+                                //   style: FlutterFlowTheme.of(context).headlineSmall.override(
+                                //         fontFamily: 'Inter Tight',
+                                //         letterSpacing: 0.0,
+                                //       ),
+                                // ),
+                                FutureBuilder<String>(
+                                  future: Future.value(rrespond),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return CircularProgressIndicator();
+                                    } else if (snapshot.hasError) {
+                                      return Text(
+                                        'Error: ${snapshot.error}',
+                                        style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                              fontFamily: 'Inter',
+                                              color: FlutterFlowTheme.of(context).secondaryText,
+                                              letterSpacing: 0.0,
+                                            ),
+                                      );
+                                    } else {
+                                      return Text(
+                                        snapshot.data ?? '',
                                   style: FlutterFlowTheme.of(context).bodyMedium.override(
                                         fontFamily: 'Inter',
                                         color: FlutterFlowTheme.of(context).secondaryText,
                                         letterSpacing: 0.0,
                                       ),
+                                      );
+                                    }
+                                  },
                                 ),
                               ].divide(SizedBox(height: 12.0)),
                             ),
                           ),
                         ),
                         //suggetions for input
-                       
-                        Container(
-                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 12.0, 0.0, 12.0),
-                          height: 70.0,
-                          child: ListView(
-                            padding: EdgeInsets.fromLTRB(
-                              16.0,
-                              0,
-                              16.0,
-                              0,
-                            ),
-                            primary: false,
-                            shrinkWrap: true,
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              // suggestions for input
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).primary,
-                                  borderRadius: BorderRadius.circular(25.0),
-                                  border: Border.all(
-                                    color: FlutterFlowTheme.of(context).primary,
-                                    width: 1.0,
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(16.0, 12.0, 16.0, 12.0),
-                                  child: Text(
-                                    'Schedule a workout',
-                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                          fontFamily: 'Inter',
-                                          color: FlutterFlowTheme.of(context).alternate,
-                                          letterSpacing: 0.0,
-                                        ),
-                                  ),
-                                ),
+                        
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: <Widget>[
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Your logic for "Plan team meeting"
+                                  ScheduleBiAI("plan a meeting");
+                                },
+                                child: Text('Plan team meeting'),
                               ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).primary,
-                                  borderRadius: BorderRadius.circular(25.0),
-                                  border: Border.all(
-                                    color: FlutterFlowTheme.of(context).primary,
-                                    width: 1.0,
-                                  ),
-                                ),  
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(16.0, 12.0, 16.0, 12.0),
-                                  child: Text(
-                                    'Plan team meeting',
-                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                          fontFamily: 'Inter',
-                                          color: FlutterFlowTheme.of(context).alternate,
-                                          letterSpacing: 0.0,
-                                        ),
-                                  ),
-                                ),
-
+                              SizedBox(width: 8), // Add spacing between buttons
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Your logic for "Schedule a meeting"
+                                  ScheduleBiAI("Schedule a meeting");
+                                },
+                                child: Text('Schedule a meeting'),
                               ),
-                              Container(
-                                  decoration: BoxDecoration(
-                                    color: FlutterFlowTheme.of(context).primary,
-                                    borderRadius: BorderRadius.circular(25.0),
-                                    border: Border.all(
-                                      color: FlutterFlowTheme.of(context).primary,
-                                      width: 1.0,
-                                    ),
-                                  ),
-                                  child: Padding(
-                                   padding: EdgeInsetsDirectional.fromSTEB(16.0, 12.0, 16.0, 12.0),
-                                    child: Text(
-                                      'Family dinner',
-                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                            fontFamily: 'Inter',
-                                            color: FlutterFlowTheme.of(context).alternate,
-                                            letterSpacing: 0.0,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                            ].divide(SizedBox(width: 12.0)),
+                              SizedBox(width: 8), // Add spacing between buttons
+                              ElevatedButton(
+                                onPressed: () {
+                                  // Your logic for "Schedule a workout"
+                                  ScheduleBiAI("Schedule a workout");
+                                },
+                                child: Text('Schedule a workout'),
+                              ),
+                            ],
                           ),
                         ),
                         ],
                         ),
                         ),
-                      
+
                         // chat bubbles
                         Expanded(
                           child: ValueListenableBuilder<bool>(
@@ -345,12 +411,10 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
                                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                                     itemCount: _messages.length,
                                     itemBuilder: (context, index) {
-                                      return _messages[index]; // Assuming `_messages` contains widgets
+                                      return _messages[index]; // Assuming _messages contains widgets
                                     },
                                   ),
                                 ),
-                                
-                                // Input box section
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
                                   color: FlutterFlowTheme.of(context).secondaryBackground,
@@ -371,8 +435,10 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
                                               hintText: 'Type your message...',
                                               hintStyle: FlutterFlowTheme.of(context).bodyMedium.override(
                                                     fontFamily: 'Inter',
+                                
+                                
                                                   ),
-                                              border: InputBorder.none,
+                                                  border: InputBorder.none,
                                               contentPadding: const EdgeInsets.symmetric(
                                                   horizontal: 16.0, vertical: 12.0),
                                             ),
@@ -381,11 +447,10 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
                                                 ),
                                             textAlign: TextAlign.start,
                                             minLines: 1,
-                                            maxLines: 4, // Allow multiple lines if needed
+                                            maxLines: 4,
                                           ),
                                         ),
                                       ),
-
                                       // Send button
                                       const SizedBox(width: 8.0),
                                       Container(
@@ -403,21 +468,22 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
                                                 icon: Icon(
                                                   Icons.send,
                                                   color: FlutterFlowTheme.of(context).info,
-                                                  size: 24.0,
+                                                
+                                                size: 24.0,   
                                                 ),
-                                                onPressed: _sendMessage,
+                                                 onPressed: _sendMessage,
                                               ),
                                       ),
                                     ],
+                                    
                                   ),
                                 ),
                               ],
                             );
                           },
                         ),
-
-                        ),
-                  
+                        
+                      ),
                     ],
                   ),
                 ),
@@ -486,5 +552,41 @@ class ChatBubbleWidget extends StatelessWidget {
       ),
       ),
     );
+  }
+}
+
+class Event {
+  final String title;
+  final Color color;
+  final String startTime;
+  final String endTime;
+  final String description;
+  final String location;
+  final DateTime date; // Add date field
+
+  Event({
+    required this.title,
+    required this.color,
+    required this.startTime,
+    required this.endTime,
+    required this.description,
+    required this.location,
+    required this.date, // Initialize date field
+  });
+
+  factory Event.fromMap(Map<dynamic, dynamic> map) {
+    return Event(
+      title: map['title'] ?? '',
+      color: _getColorFromNumber(map['color'] ?? 0),
+      startTime: map['startTime'] ?? '',
+      endTime: map['endTime'] ?? '',
+      description: map['description'] ?? '',
+      location: map['location'] ?? '',
+      date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(), // Parse date field
+    );
+  }
+
+  static Color _getColorFromNumber(int number) {
+    return Color(number);
   }
 }

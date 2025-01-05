@@ -11,7 +11,7 @@ import 'flutter_flow/nav/nav.dart';
 import 'index.dart';
 import 'test.dart';
 import 'package:pro_planner/theme/theme_notifier.dart';
-
+import 'package:pro_planner/pages/chatbot/riveanimation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -86,7 +86,7 @@ class _MyAppState extends State<MyApp> {
           return MaterialApp(
             title: 'ProPlanner',
             theme: themeNotifier.currentTheme,
-            home: MainpageWidget(),
+            home:MainpageWidget(),
           );
         },
       ),

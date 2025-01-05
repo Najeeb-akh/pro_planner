@@ -23,6 +23,7 @@ class Event {
   final String endTime;
   final String description;
   final String location;
+  final DateTime date; // Add date field
 
   Event({
     required this.title,
@@ -31,34 +32,23 @@ class Event {
     required this.endTime,
     required this.description,
     required this.location,
+    required this.date, // Initialize date field
   });
 
   factory Event.fromMap(Map<dynamic, dynamic> map) {
     return Event(
-      title: map['title'],
-      color: _getColorFromNumber(map['color']),
-      startTime: map['startTime'],
-      endTime: map['endTime'],
-      description: map['description'],
-      location: map['location'],
+      title: map['title'] ?? '',
+      color: _getColorFromNumber(map['color'] ?? 0),
+      startTime: map['startTime'] ?? '',
+      endTime: map['endTime'] ?? '',
+      description: map['description'] ?? '',
+      location: map['location'] ?? '',
+      date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(), // Parse date field
     );
   }
 
   static Color _getColorFromNumber(int number) {
-    switch (number) {
-      case 1:
-        return Colors.redAccent;
-      case 2:
-        return Colors.blueAccent;
-      case 3:
-        return Colors.greenAccent;
-      case 4:
-        return Colors.yellowAccent;
-      case 5:
-        return Colors.orangeAccent;
-      default:
-        return Colors.grey;
-    }
+    return Color(number);
   }
 }
 
@@ -198,7 +188,9 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
   /// returns 5 if the start time or end time is empty.
   /// Returns 10 if the event is successfully added.  
 
-  int _addNewEvent(String eventName, DateTime startTime, DateTime endTime, String location, String description) {
+
+
+  int _addNewEvent(String eventName, Color select_color,  DateTime startTime, DateTime endTime,  String description , String location) {
     // Check if any parameter is empty
     if (eventName.isEmpty)
       return 1;
@@ -212,15 +204,16 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
       return 5;
 
 
+
     // Save the new event in Firebase Realtime Database
     final DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
       final eventId = 'eventId${globalEventCounter++}';
     databaseReference.child('/$eventId').set({
-      'color': 1,
+      'title': eventName,
+      'color': select_color.value,
       'startTime': startTime.toIso8601String(),
       'endTime': endTime.toIso8601String(),
       'location': location,
-      'title': eventName,
       'description': _eventDescription,
     });
 
@@ -619,6 +612,7 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
                                               color: event.color,
                                               startTime: event.startTime,
                                               endTime: event.endTime,
+                                             
                                             ),
                                       
                                     ].divide(SizedBox(height: 16.0)),
@@ -1122,12 +1116,15 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
                       endTimeOfDay.minute,
                     );
 
+                  
+
                     final result = _addNewEvent(
                       _eventTitle.trim(),
+                      selectedColor,
                       startDateTime,
                       endDateTime,
-                      _eventLocation.trim(),
                       _eventDescription.trim(),
+                     _eventLocation.trim(),
                     );
 
                     String message;
@@ -1391,12 +1388,14 @@ class EventCardWidget extends StatelessWidget {
   final String startTime;
   final String endTime;
 
+
   const EventCardWidget({
     Key? key,
     required this.title,
     required this.color,
     required this.startTime,
     required this.endTime,
+
   }) : super(key: key);
 
   String _formatTime(String time) {
