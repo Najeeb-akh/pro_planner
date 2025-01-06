@@ -38,9 +38,9 @@ class _PreferencePageWidgetState extends State<PreferencePageWidget> {
     super.initState();
     _model = createModel(context, () => PreferencePageModel());
 
-    _model.switchValue1 = true;
-    _model.switchValue2 = true;
-    _model.switchValue3 = true;
+    _model.switchValue1 = false; // Set to false by default
+    _model.switchValue2 = false; // Set to false by default
+    _model.switchValue3 = false; // Set to false by default
     _model.reminder = 60;
   }
 

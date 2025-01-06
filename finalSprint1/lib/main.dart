@@ -14,7 +14,7 @@ import 'package:pro_planner/theme/theme_notifier.dart';
 import 'package:pro_planner/pages/chatbot/riveanimation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'state/user_state.dart';
-
+//january6
 class AuthProvider with ChangeNotifier {
   bool _isLoggedIn = false;
 

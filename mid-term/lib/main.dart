@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:pro_planner/pages/mainpage/mainpage_model.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
+import 'flutter_flow/flutter_flow_theme.dart';
 import 'flutter_flow/flutter_flow_util.dart';
 import 'flutter_flow/nav/nav.dart';
 import 'index.dart';
@@ -26,6 +26,7 @@ void main() async {
         brightness: Brightness.dark,
         /* dark theme settings */
       ),
+      // the coleor of the app
       themeMode: ThemeMode.dark, 
       /* ThemeMode.system to follow system theme, 
          ThemeMode.light for light theme, 

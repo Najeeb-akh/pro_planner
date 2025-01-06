@@ -9,14 +9,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class PreferencePageModel extends FlutterFlowModel<PreferencePageWidget> {
-  ///  State fields for stateful widgets in this page.
 
-  // State field(s) for Switch widget.
   bool? switchValue1;
-  // State field(s) for Switch widget.
+
   bool? switchValue2;
-  // State field(s) for Switch widget.
+
   bool? switchValue3;
+
+  int? reminder;
+  //TimeOfDay? selectedTime;
+  TimeOfDay? startTime;
+  TimeOfDay? endTime;
+
 
   @override
   void initState(BuildContext context) {}

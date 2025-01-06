@@ -118,7 +118,7 @@ class _ChangepassworWidgetState extends State<ChangepassworWidget> with SingleTi
                 size: 30.0,
               ),
               onPressed: () async {
-                Navigator.push(
+                Navigator.pop(
                   context,
                   MaterialPageRoute(
                     builder: (context) => MainpageWidget(),
@@ -466,27 +466,28 @@ class _ChangepassworWidgetState extends State<ChangepassworWidget> with SingleTi
                                             },
                                             text: 'Change Password',
                                             options: FFButtonOptions(
-                                              height: 40.0,
-                                              padding: EdgeInsetsDirectional.fromSTEB(
-                                                  16.0, 0.0, 16.0, 0.0),
-                                              iconPadding:
-                                                  EdgeInsetsDirectional.fromSTEB(
-                                                      0.0, 0.0, 0.0, 0.0),
-                                              color: FlutterFlowTheme.of(context)
-                                                  .primary,
-                                              textStyle: FlutterFlowTheme.of(context)
-                                                  .titleSmall
-                                                  .override(
-                                                    fontFamily: 'Inter Tight',
-                                                    color: Colors.white,
+                                              splashColor: Theme.of(context).brightness == Brightness.dark
+                                                  ? const Color.fromARGB(83, 158, 158, 158)
+                                                  : const Color.fromARGB(105, 25, 0, 94),
+                                              height: 50.0,
+                                              padding: EdgeInsetsDirectional.fromSTEB(20.0, 0.0, 20.0, 0.0),
+                                              iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                              textStyle: FlutterFlowTheme.of(context).titleSmall.override(
+                                                    fontFamily: 'Orbitron', // A more futuristic font
+                                                    color: Theme.of(context).brightness == Brightness.dark
+                                                  ? Colors.blueGrey
+                                                  : const Color.fromARGB(255, 68, 146, 241),
                                                     fontSize: 20.0,
-                                                    letterSpacing: 0.0,
+                                                    letterSpacing: 1.0, // Slightly increased letter spacing
                                                   ),
-                                              elevation: 0.0,
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0),
+                                              elevation: 5.0, // Add some elevation for a shadow effect
+                                              borderRadius: BorderRadius.circular(12.0), // Slightly larger border radius
+                                              borderSide: BorderSide(
+                                                color: Colors.white.withOpacity(0.5), // Semi-transparent border
+                                                width: 1.0,
+                                              ),
                                             ),
-                                          ),
+                                            ),
                                         ],
                                       ),
                                     ),
