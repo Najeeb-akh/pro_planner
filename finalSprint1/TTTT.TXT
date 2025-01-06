@@ -1,0 +1,9 @@
+• Java binary at: C:\Program Files\Android\Android Studio\jbr\bin\java
+
+
+
+
+keytool -genkey -v -keystore C:\Program Files\Android\Android Studio\jbr\bin\java\<NAME>.jks -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+
+
+"C:\Program Files\Android\Android Studio\jbr\bin\keytool" -genkey -v -keystore C:\Users\adama\pro_planner\pro_planner.jks -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias upload
