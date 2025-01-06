@@ -14,6 +14,7 @@ import 'package:firebase_database/firebase_database.dart';
 import '../../theme/theme_notifier.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 
 class Event {
@@ -143,7 +144,9 @@ class MainpageWidget extends StatefulWidget {
   /// A focus on readability and usability, with sufficient spacing between
   /// elements.
   /// add padding from the buttom
-  const MainpageWidget({super.key});
+  final User? user;
+
+  const MainpageWidget({super.key, this.user});
 
   @override
   State<MainpageWidget> createState() => _MainpageWidgetState();

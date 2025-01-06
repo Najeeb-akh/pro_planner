@@ -1,22 +1,20 @@
 import 'package:pro_planner/pages/signup/signup_widget.dart';
 import 'package:pro_planner/index.dart';
 import 'package:pro_planner/main.dart';
-
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
+import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'login_model.dart';
 export 'login_model.dart';
 
+
 class LoginWidget extends StatefulWidget {
-  /// create a login page with abstract griedent color background
   const LoginWidget({super.key});
 
   @override
@@ -25,17 +23,14 @@ class LoginWidget extends StatefulWidget {
 
 class _LoginWidgetState extends State<LoginWidget> {
   late LoginModel _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => LoginModel());
-
     _model.textController1 ??= TextEditingController();
     _model.textFieldFocusNode1 ??= FocusNode();
-
     _model.textController2 ??= TextEditingController();
     _model.textFieldFocusNode2 ??= FocusNode();
   }
@@ -43,14 +38,12 @@ class _LoginWidgetState extends State<LoginWidget> {
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
   }
 
   Future<void> _signIn() async {
     try {
-      final userCredential =
-          await firebase_auth.FirebaseAuth.instance.signInWithEmailAndPassword(
+        UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _model.textController1!.text,
         password: _model.textController2!.text,
       );
@@ -59,21 +52,47 @@ class _LoginWidgetState extends State<LoginWidget> {
             content: Text(
                 'Successfully logged in as ${userCredential.user?.email}')),
       );
-      // Navigate to the main page or home page
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => MainpageWidget()),
+      Provider.of<AuthProvider>(context, listen: false).login();
+
+      // Navigate to the main page or home page and pass user information
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainpageWidget(
+            user: userCredential.user,
+          ),
+        ),
       );
     } catch (e) {
+      String errorMessage;
+      if (e is firebase_auth.FirebaseAuthException) {
+        switch (e.code) {
+          case 'invalid-email':
+            errorMessage = 'The email address is not valid.';
+            break;
+          case 'user-disabled':
+            errorMessage = 'The user account has been disabled.';
+            break;
+          case 'user-not-found':
+            errorMessage = 'No user found with this email.';
+            break;
+          case 'wrong-password':
+            errorMessage = 'Incorrect password.';
+            break;
+          default:
+            errorMessage = 'An unknown error occurred.';
+        }
+      } else {
+        errorMessage = 'Failed to sign in: $e';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to sign in: $e')),
+        SnackBar(content: Text(errorMessage)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    //final authProvider = Provider.of<AuthProvider>(context);
-
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -353,12 +372,6 @@ class _LoginWidgetState extends State<LoginWidget> {
                                   FFButtonWidget(
                                     onPressed: () {
                                       _signIn();
-                                      // Navigator.pushReplacement(
-                                      //   context,
-                                      //   MaterialPageRoute(
-                                      //       builder: (context) =>
-                                      //           MainpageWidget()),
-                                      // );
                                     },
                                     text: 'Sign In',
                                     options: FFButtonOptions(
@@ -425,17 +438,6 @@ class _LoginWidgetState extends State<LoginWidget> {
                                   ),
                             ),
                           ),
-                          // Text(
-                          //   'Sign Up',
-                          //   style: FlutterFlowTheme.of(context)
-                          //       .bodyMedium
-                          //       .override(
-                          //         fontFamily: 'Inter',
-                          //         color: Colors.white,
-                          //         letterSpacing: 0.0,
-                          //         fontWeight: FontWeight.bold,
-                          //       ),
-                          // ),
                         ].divide(SizedBox(width: 8.0)),
                       ),
                     ].divide(SizedBox(height: 24.0)),

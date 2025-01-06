@@ -7,7 +7,8 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -69,6 +70,16 @@ class _SignupWidgetState extends State<SignupWidget> {
       //   'email': _model.textController1!.text,
       //   'createdAt': Timestamp.now(),
       // });
+
+      final DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child('users/');
+      final userId = userCredential.user?.uid;
+      databaseReference.child('/$userId').set({
+        'name': _model.textController3!.text,
+        'description': _model.textController4!.text,
+        'email': _model.textController1!.text,
+        'createdAt': DateTime.now().millisecondsSinceEpoch,
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
