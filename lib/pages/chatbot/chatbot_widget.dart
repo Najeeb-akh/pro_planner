@@ -1,27 +1,26 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_vertexai/firebase_vertexai.dart';
+import 'package:pro_planner/state/user_state.dart';
 import 'package:pro_planner/pages/mainpage/mainpage_widget.dart';
 import '/components/menu_widget.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
-import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'chatbot_model.dart';
 export 'chatbot_model.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_vertexai/firebase_vertexai.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:pro_planner/pages/mainpage/mainpage_model.dart';
 import 'package:pro_planner/pages/chatbot/riveanimation.dart';
 import 'package:speech_balloon/speech_balloon.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import '../../state/user_state.dart';
 
 class ChatbotWidget extends StatefulWidget {
-  const ChatbotWidget({super.key, this.user});
+  const ChatbotWidget({super.key, this.user, required this.events});
 
   final firebase_auth.User? user;
+  final List<Event> events;
 
   @override
   State<ChatbotWidget> createState() => _ChatbotWidgetState();
@@ -34,48 +33,36 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
   final ScrollController _scrollController = ScrollController();
   final List<ChatBubbleWidget> _messages = [];
   final model = FirebaseVertexAI.instance.generativeModel(model: 'gemini-1.5-flash-002');
+  List<Event> _events_chat = [];
   final ValueNotifier<bool> _messageNotifier = ValueNotifier(false);
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
   String rrespond = '';
   String _userName = '';
-
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _model = createModel(context, () => ChatbotModel());
-    _fetchEvents();
     _model.textController ??= TextEditingController();
     _model.textFieldFocusNode ??= FocusNode();
-    model.generateContent([Content.text("hi my name is ${Provider.of<UserState>(context, listen: false).userName} respond with 2 lovely emojis and a greeting message based on time and weather one line at maximum")]).then((response) {
-      setState(() {
-        rrespond = response.text ?? '';
-      });
-    });
 
+    // Initialize _events with the passed events
+    _events_chat = widget.events;
+
+    // Delay the Provider call until after the widget is fully initialized
+    Future.microtask(() {
+      final userName = Provider.of<UserState>(context, listen: false).userName;
+      _generateInitialResponse(userName);
+    });
   }
 
-  // void _fetchUserName() async {
-  //   final userId = widget.user?.uid;
-  //   if (userId != null) {
-  //     final snapshot = await FirebaseDatabase.instance.ref().child('users/$userId/name').get();
-  //     if (snapshot.exists) {
-  //       setState(() {
-  //         _userName = snapshot.value as String;
-  //       });
-  //     }
-  //   }
-  // }
-
-  //Fetch schedules from Firebase based on the query
-  List<Event> _events = [];
-  void _fetchEvents() {
-    _databaseReference.onValue.listen((event) {
-      final data = event.snapshot.value as Map<dynamic, dynamic>;
+  void _generateInitialResponse(String userName) {
+    model.generateContent([
+      Content.text("hi my name is $userName respond with 2 lovely emojis and a greeting message based on time and weather one line at maximum")
+    ]).then((response) {
       setState(() {
-        _events = data.values.map((e) => Event.fromMap(e)).toList();
+        rrespond = response.text ?? '';
       });
     });
   }
@@ -103,7 +90,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
       }
     });
   }
-  
+
   Future<String> _firstResponse() async {
     final response = await model.generateContent(
       [Content.text("hi my name is adam")],
@@ -140,7 +127,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
       });
 
       String eventsToString() {
-        return _events.map((event) {
+        return _events_chat.map((event) {
           return 'Title: ${event.title}, '
                 'Color: ${event.color}, '
                 'Start Time: ${event.startTime}, '
@@ -211,7 +198,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
 
   void ScheduleBiAI(String s) async {
     String eventsToString() {
-      return _events.map((event) {
+      return _events_chat.map((event) {
         return 'Title: ${event.title}, '
               'Color: ${event.color}, '
               'Start Time: ${event.startTime}, '
@@ -256,7 +243,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
           leading: IconButton(
             onPressed: () {
               // Navigate back to the main page
-              Navigator.of(context).pushReplacement(
+              Navigator.of(context).pop(
                 MaterialPageRoute(builder: (context) => MainpageWidget()),
               );
             },
@@ -558,38 +545,38 @@ class ChatBubbleWidget extends StatelessWidget {
   }
 }
 
-class Event {
-  final String title;
-  final Color color;
-  final String startTime;
-  final String endTime;
-  final String description;
-  final String location;
-  final DateTime date; // Add date field
+// class Event {
+//   final String title;
+//   final Color color;
+//   final String startTime;
+//   final String endTime;
+//   final String description;
+//   final String location;
+//   final DateTime date; // Add date field
 
-  Event({
-    required this.title,
-    required this.color,
-    required this.startTime,
-    required this.endTime,
-    required this.description,
-    required this.location,
-    required this.date, // Initialize date field
-  });
+//   Event({
+//     required this.title,
+//     required this.color,
+//     required this.startTime,
+//     required this.endTime,
+//     required this.description,
+//     required this.location,
+//     required this.date, // Initialize date field
+//   });
 
-  factory Event.fromMap(Map<dynamic, dynamic> map) {
-    return Event(
-      title: map['title'] ?? '',
-      color: _getColorFromNumber(map['color'] ?? 0),
-      startTime: map['startTime'] ?? '',
-      endTime: map['endTime'] ?? '',
-      description: map['description'] ?? '',
-      location: map['location'] ?? '',
-      date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(), // Parse date field
-    );
-  }
+//   factory Event.fromMap(Map<dynamic, dynamic> map) {
+//     return Event(
+//       title: map['title'] ?? '',
+//       color: _getColorFromNumber(map['color'] ?? 0),
+//       startTime: map['startTime'] ?? '',
+//       endTime: map['endTime'] ?? '',
+//       description: map['description'] ?? '',
+//       location: map['location'] ?? '',
+//       date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(), // Parse date field
+//     );
+//   }
 
-  static Color _getColorFromNumber(int number) {
-    return Color(number);
-  }
-}
+//   static Color _getColorFromNumber(int number) {
+//     return Color(number);
+//   }
+// }

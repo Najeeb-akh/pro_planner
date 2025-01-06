@@ -52,11 +52,11 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           path: '/mainpage',
           builder: (context, params) => MainpageWidget(),
         ),
-        FFRoute(
-          name: 'chatbot',
-          path: '/chatbot',
-          builder: (context, params) => ChatbotWidget(),
-        ),
+        // FFRoute(
+        //   name: 'chatbot',
+        //   path: '/chatbot',
+        //   builder: (context, params) => ChatbotWidget(),
+        // ),
         FFRoute(
           name: 'login',
           path: '/login',

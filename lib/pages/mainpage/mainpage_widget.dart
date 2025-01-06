@@ -290,6 +290,12 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
     WidgetsBinding.instance.addObserver(this);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchEvents(); // Fetch events whenever the widget is rebuilt
+  }
+
   void _fetchUserName() async {
     final userId = widget.user?.uid;
     if (userId != null) {
@@ -301,15 +307,20 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
       }
     }
   }
-
   void _fetchEvents() {
     final userId = widget.user?.uid;
     if (userId != null) {
       _databaseReference.child(userId).child('events').onValue.listen((event) {
-        final data = event.snapshot.value as Map<dynamic, dynamic>;
-        setState(() {
-          _events = data.values.map((e) => Event.fromMap(e)).toList();
-        });
+        final data = event.snapshot.value;
+        if (data != null && data is Map<dynamic, dynamic>) {
+          setState(() {
+            _events = data.values.map((e) => Event.fromMap(e)).toList();
+          });
+        } else {
+          setState(() {
+            _events = [];
+          });
+        }
       });
     }
   }
@@ -324,6 +335,10 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
              eventDate.month == now.month &&
              eventDate.day == now.day;
     }).toList();
+  }
+
+  List<Event> _getAllEvents() {
+    return _events;
   }
 
   String _formatTime(String time) {
@@ -522,8 +537,10 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-
-                      builder: (context) => ChatbotWidget(user:widget.user), // Pass the user to the ChatbotWidget
+                      builder: (context) => ChatbotWidget(
+                        user: widget.user,
+                        events: _getAllEvents(), // Pass the events to the ChatbotWidget
+                      ),
                     ),
                   );
                 },
@@ -700,7 +717,10 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
                           wrapWithModel(
                             model: _model.generatebyaiModel,
                             updateCallback: () => safeSetState(() {}),
-                            child: GeneratebyaiWidget(),
+                            child: GeneratebyaiWidget(
+                              user: widget.user,
+                              events: _getAllEvents(), // Pass the events to the GeneratebyaiWidget
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsetsDirectional.fromSTEB(
