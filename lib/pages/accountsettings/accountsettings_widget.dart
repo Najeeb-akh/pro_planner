@@ -1,4 +1,5 @@
 import 'package:pro_planner/index.dart';
+import '../../state/user_state.dart';
 
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
@@ -42,25 +43,12 @@ class _AccountsettingsWidgetState extends State<AccountsettingsWidget> {
     super.dispose();
   }
 
-  // Future<void> _signOut() async {
-  //   try {
-  //     await firebase_auth.FirebaseAuth.instance.signOut();
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Successfully signed out')),
-  //     );
-  //     // Navigate to the login page
-  //     Navigator.of(context).pushReplacement(
-  //       MaterialPageRoute(builder: (context) => LoginWidget()),
-  //     );
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to sign out: $e')),
-  //     );
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
+    final userName = Provider.of<UserState>(context).userName;
+    final email1 = Provider.of<UserState>(context, listen: false).email;
+    final description = Provider.of<UserState>(context).description;
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -169,7 +157,7 @@ class _AccountsettingsWidgetState extends State<AccountsettingsWidget> {
                           ),
                         ),
                         Text(
-                          'Najeeb Abu Kheit ',
+                          userName,
                           style: FlutterFlowTheme.of(context)
                               .headlineSmall
                               .override(
@@ -178,7 +166,7 @@ class _AccountsettingsWidgetState extends State<AccountsettingsWidget> {
                               ),
                         ),
                         Text(
-                          '@najeebakh',
+                          description,
                           style: FlutterFlowTheme.of(context)
                               .bodyMedium
                               .override(
@@ -256,7 +244,7 @@ class _AccountsettingsWidgetState extends State<AccountsettingsWidget> {
                                                       ),
                                             ),
                                             Text(
-                                              'najeeb@example.com',
+                                              email1,
                                               style:
                                                   FlutterFlowTheme.of(context)
                                                       .bodySmall
@@ -285,70 +273,59 @@ class _AccountsettingsWidgetState extends State<AccountsettingsWidget> {
                               ),
                               child: Padding(
                                 padding: EdgeInsetsDirectional.fromSTEB(
-                                    16.0, 16.0, 16.0, 16.0),
+                                    16.0, 22.0, 22.0, 16.0),
                                 child: Row(
+                                  
                                   mainAxisSize: MainAxisSize.max,
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
+                                    children: [
+                                    
+                                    InkWell(
+                                    
+                                      onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                        builder: (context) =>
+                                          ChangepassworWidget(),
+                                        ),
+                                      );
+                                      },
+                                      child: Row(
+                  
                                       mainAxisSize: MainAxisSize.max,
                                       children: [
                                         Icon(
-                                          Icons.lock,
-                                          color: FlutterFlowTheme.of(context)
-                                              .primary,
-                                          size: 24.0,
+                                        Icons.lock,
+                                        color: FlutterFlowTheme.of(context)
+                                          .primary,
+                                        size: 24.0,
                                         ),
                                         Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Change Password',
-                                              style:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .override(
-                                                        fontFamily: 'Inter',
-                                                        letterSpacing: 0.0,
-                                                      ),
-                                            ),
-                                          ],
-                                        ),
-                                        FFButtonWidget(
-                                          onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                            builder: (context) =>
-                                              ChangepassworWidget(),
-                                            ),
-                                          );
-                                          },
-                                          text: 'Change Password',
-                                          options: FFButtonOptions(
-                                          width: 150.0,
-                                          height: 40.0,
-                                          color: FlutterFlowTheme.of(context).primary,
-                                          textStyle: FlutterFlowTheme.of(context).subtitle2.override(
-                                              fontFamily: 'Inter',
-                                              color: Colors.white,
-                                            ),
-                                          borderSide: BorderSide(
-                                            color: Colors.transparent,
-                                            width: 1.0,
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                          'Change Password',
+                                          style:
+                                            FlutterFlowTheme.of(context)
+                                              .bodyMedium
+                                              .override(
+                                                fontFamily: 'Inter',
+                                                letterSpacing: 0.0,
+                                              ),
                                           ),
-                                          borderRadius: BorderRadius.circular(8.0),
-                                          ),
+                                        ],
                                         ),
                                       ].divide(SizedBox(width: 12.0)),
+                                      ),
                                     ),
                                     Icon(
                                       Icons.chevron_right,
                                       color: FlutterFlowTheme.of(context)
-                                          .secondaryText,
+                                        .secondaryText,
                                       size: 24.0,
                                     ),
                                   ],
@@ -583,105 +560,6 @@ class _AccountsettingsWidgetState extends State<AccountsettingsWidget> {
                                 ],
                               ),
                             ),
-                            // GestureDetector(
-                            //   onTap: () async {
-                            //     await _signOut();
-                            //   },
-                            //   child: Container(
-                            //     decoration: BoxDecoration(
-                            //       color: FlutterFlowTheme.of(context)
-                            //           .primaryBackground,
-                            //       borderRadius: BorderRadius.circular(12.0),
-                            //     ),
-                            //     child: Padding(
-                            //       padding: EdgeInsetsDirectional.fromSTEB(
-                            //           16.0, 16.0, 16.0, 16.0),
-                            //       child: Row(
-                            //         mainAxisSize: MainAxisSize.max,
-                            //         mainAxisAlignment:
-                            //             MainAxisAlignment.spaceBetween,
-                            //         children: [
-                            //           Row(
-                            //             mainAxisSize: MainAxisSize.max,
-                            //             children: [
-                            //               Icon(
-                            //                 Icons.logout,
-                            //                 color: FlutterFlowTheme.of(context)
-                            //                     .error,
-                            //                 size: 24.0,
-                            //               ),
-                            //               Text(
-                            //                 'Sign Out',
-                            //                 style: FlutterFlowTheme.of(context)
-                            //                     .bodyMedium
-                            //                     .override(
-                            //                       fontFamily: 'Inter',
-                            //                       color: FlutterFlowTheme.of(
-                            //                               context)
-                            //                           .error,
-                            //                       letterSpacing: 0.0,
-                            //                     ),
-                            //               ),
-                            //             ].divide(SizedBox(width: 12.0)),
-                            //           ),
-                            //           Icon(
-                            //             Icons.chevron_right,
-                            //             color: FlutterFlowTheme.of(context)
-                            //                 .secondaryText,
-                            //             size: 24.0,
-                            //           ),
-                            //         ],
-                            //       ),
-                            //     ),
-                            //   ),
-                            // ),
-                            // Container(
-                            //   decoration: BoxDecoration(
-                            //     color: FlutterFlowTheme.of(context)
-                            //         .primaryBackground,
-                            //     borderRadius: BorderRadius.circular(12.0),
-                            //   ),
-                            //   child: Padding(
-                            //     padding: EdgeInsetsDirectional.fromSTEB(
-                            //         16.0, 16.0, 16.0, 16.0),
-                            //     child: Row(
-                            //       mainAxisSize: MainAxisSize.max,
-                            //       mainAxisAlignment:
-                            //           MainAxisAlignment.spaceBetween,
-                            //       children: [
-                            //         Row(
-                            //           mainAxisSize: MainAxisSize.max,
-                            //           children: [
-                            //             Icon(
-                            //               Icons.logout,
-                            //               color: FlutterFlowTheme.of(context)
-                            //                   .error,
-                            //               size: 24.0,
-                            //             ),
-                            //             Text(
-                            //               'Sign Out',
-                            //               style: FlutterFlowTheme.of(context)
-                            //                   .bodyMedium
-                            //                   .override(
-                            //                     fontFamily: 'Inter',
-                            //                     color:
-                            //                         FlutterFlowTheme.of(context)
-                            //                             .error,
-                            //                     letterSpacing: 0.0,
-                            //                   ),
-                            //             ),
-                            //           ].divide(SizedBox(width: 12.0)),
-                            //         ),
-                            //         Icon(
-                            //           Icons.chevron_right,
-                            //           color: FlutterFlowTheme.of(context)
-                            //               .secondaryText,
-                            //           size: 24.0,
-                            //         ),
-                            //       ],
-                            //     ),
-                            //   ),
-                            // ),
                           ].divide(SizedBox(height: 20.0)),
                         ),
                       ),

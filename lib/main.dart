@@ -11,9 +11,9 @@ import 'flutter_flow/nav/nav.dart';
 import 'index.dart';
 import 'test.dart';
 import 'package:pro_planner/theme/theme_notifier.dart';
-
 import 'package:pro_planner/pages/chatbot/riveanimation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'state/user_state.dart';
 
 class AuthProvider with ChangeNotifier {
   bool _isLoggedIn = false;
@@ -40,8 +40,11 @@ void main() async {
   await FlutterFlowTheme.initialize();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AuthProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserState()),
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
+      ],
       child: MyApp(),
     ),
   );
@@ -86,8 +89,8 @@ class _MyAppState extends State<MyApp> {
             title: 'ProPlanner',
             theme: themeNotifier.currentTheme,
             home: Consumer<AuthProvider>(
-              builder: (context, auth, child) {
-                return auth.isLoggedIn ? MainpageWidget() : LoginWidget();
+                builder: (context, auth, child) {
+                return auth.isLoggedIn ? MainpageWidget(user: FirebaseAuth.instance.currentUser) : LoginWidget();
               },
             ),
           );

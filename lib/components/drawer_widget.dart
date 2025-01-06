@@ -10,15 +10,15 @@ import '/pages/preference_page/preference_page_widget.dart';
 import '/pages/other/other_widget.dart';
 import '/pages/login/login_widget.dart'; // Add this line
 export 'drawer_model.dart';
-
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../state/user_state.dart';
 
 class DrawerWidget extends StatefulWidget {
-  /// create a right side drawer, inside the drawer icon personal photo is in
-  /// the middle, settings and preferences option, sign out option, if you have
-  /// any othersuggestion please add.
-  const DrawerWidget({super.key});
+  const DrawerWidget({super.key, this.user});
+
+  final firebase_auth.User? user; // Add this line
 
   @override
   State<DrawerWidget> createState() => _DrawerWidgetState();
@@ -37,6 +37,22 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => DrawerModel());
+    _fetchUserDetails(); // Update this line
+  }
+
+  void _fetchUserDetails() async {
+    final userId = widget.user?.uid;
+    if (userId != null) {
+      final snapshot = await FirebaseDatabase.instance.ref().child('users/$userId').get();
+      if (snapshot.exists) {
+        final data = snapshot.value as Map<dynamic, dynamic>;
+        setState(() {
+          Provider.of<UserState>(context, listen: false).setUserName(data['name'] ?? '');
+          Provider.of<UserState>(context, listen: false).setEmail(data['email'] ?? '');
+          Provider.of<UserState>(context, listen: false).setDescription(data['description'] ?? '');
+        });
+      }
+    }
   }
 
   @override
@@ -65,6 +81,8 @@ class _DrawerWidgetState extends State<DrawerWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final userName = Provider.of<UserState>(context).userName;
+    
     return Opacity(
       opacity: 0.9,
       child: Container(
@@ -107,7 +125,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
               Container(
                 decoration: BoxDecoration(),
                 child: Text(
-                  'Najeeb Abu Kheit',
+                  userName, // Use the fetched username
                   style: FlutterFlowTheme.of(context).headlineMedium.override(
                         fontFamily: 'Inter Tight',
                         fontSize: 28.0,

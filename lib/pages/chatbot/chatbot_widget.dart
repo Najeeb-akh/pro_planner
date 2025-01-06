@@ -15,17 +15,17 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:pro_planner/pages/mainpage/mainpage_model.dart';
 import 'package:pro_planner/pages/chatbot/riveanimation.dart';
 import 'package:speech_balloon/speech_balloon.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import '../../state/user_state.dart';
 
 class ChatbotWidget extends StatefulWidget {
-  /// create a generate by ai page, the page is for a chat bot, a small bar for
-  /// recommended suggestions of prompts and after the chat gives a suggestiona
-  /// button for adding the event to schedule will show up
-  const ChatbotWidget({super.key});
+  const ChatbotWidget({super.key, this.user});
+
+  final firebase_auth.User? user;
 
   @override
   State<ChatbotWidget> createState() => _ChatbotWidgetState();
 }
-
 
 class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserver {
   late ChatbotModel _model;
@@ -38,6 +38,8 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
   String rrespond = '';
+  String _userName = '';
+
 
   @override
   void initState() {
@@ -47,16 +49,29 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
     _fetchEvents();
     _model.textController ??= TextEditingController();
     _model.textFieldFocusNode ??= FocusNode();
-    model.generateContent([Content.text("hi my name is adam respond with 2 lovely emojis and a greeting message based on time and weather one line at maximum")]).then((response) {
+    model.generateContent([Content.text("hi my name is ${Provider.of<UserState>(context, listen: false).userName} respond with 2 lovely emojis and a greeting message based on time and weather one line at maximum")]).then((response) {
       setState(() {
         rrespond = response.text ?? '';
       });
     });
-      
+
   }
+
+  // void _fetchUserName() async {
+  //   final userId = widget.user?.uid;
+  //   if (userId != null) {
+  //     final snapshot = await FirebaseDatabase.instance.ref().child('users/$userId/name').get();
+  //     if (snapshot.exists) {
+  //       setState(() {
+  //         _userName = snapshot.value as String;
+  //       });
+  //     }
+  //   }
+  // }
+
   //Fetch schedules from Firebase based on the query
-    List<Event> _events = [];
-   void _fetchEvents() {
+  List<Event> _events = [];
+  void _fetchEvents() {
     _databaseReference.onValue.listen((event) {
       final data = event.snapshot.value as Map<dynamic, dynamic>;
       setState(() {
@@ -90,52 +105,40 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
   }
   
   Future<String> _firstResponse() async {
-      final response = await model.generateContent(
-          [Content.text("hi my name is adam")],
-        );
-        final responseText = response.text ?? '';
-        // _messages.add(ChatBubbleWidget(
-        //   isAi: false,
-        //   title: 'for testing',
-        //   message: responseText,
-        // ));
-        return responseText;
-    }
-    //  final prompt = "Write a story about a magic backpack.";
-    //  final response = model.generateContent(prompt);
-
+    final response = await model.generateContent(
+      [Content.text("hi my name is adam")],
+    );
+    final responseText = response.text ?? '';
+    return responseText;
+  }
 
   void _sendMessage() async {
-  if (_model.textController!.text.isNotEmpty) {
-    final userMessage = _model.textController!.text;
+    if (_model.textController!.text.isNotEmpty) {
+      final userMessage = _model.textController!.text;
 
-    // Clear the text input field after sending the message
-    _model.textController!.clear();
+      // Clear the text input field after sending the message
+      _model.textController!.clear();
 
-    // Add the user's message to the list of messages and update the UI
-    setState(() {
-      _messages.add(ChatBubbleWidget(
-        isAi: false,
-        title: 'You',
-        message: userMessage,
-      ));
-      _isLoading = true;
-    });
+      // Add the user's message to the list of messages and update the UI
+      setState(() {
+        _messages.add(ChatBubbleWidget(
+          isAi: false,
+          title: 'You',
+          message: userMessage,
+        ));
+        _isLoading = true;
+      });
 
-    _messageNotifier.value = true;
-    // Scroll to the bottom of the list after the frame is rendered
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
-       // Listen for changes in the database reference
-      
-    // Convert `_events` to a string with all event details
-    // Map each event in the _events list to a formatted string
-    
+      _messageNotifier.value = true;
+      // Scroll to the bottom of the list after the frame is rendered
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+
       String eventsToString() {
         return _events.map((event) {
           return 'Title: ${event.title}, '
@@ -147,42 +150,51 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
         }).join('\n');
       }
 
+      // today's date
+      final today = DateTime.now();
 
+      String messageTOrespons = "today's date and time are : " + today.toIso8601String() + ", start answering :" + userMessage + ".if you need more detailes for the answer take a look in my events , Here is my upcoming events: " + eventsToString() +
+      "reply with short answers, avoid writing with * and make dicisions based on the context of the event title only if the event title is not clear to you, ask me for more details" +
+      "its okay if there are clashing events,but dont give or suggest an event that clash with other events";
 
-    // today's date
-    final today = DateTime.now();
-
-    String messageTOrespons="today's date and time are : "+ today.toIso8601String() +", start answering :"+userMessage+".if you need more detailes for the answer take a look in my events , Here is my upcoming events: "+eventsToString()+
-    "reply with short answers, avoid writing with * and make dicisions based on the context of the event title only if the event title is not clear to you, ask me for more details"+
-     "its okay if there are clashing events,but dont give or suggest an event that clash with other events";
-
-    // Generate a response from the AI model
-    try {
-      final response = await model.generateContent(
-        [Content.text(messageTOrespons)],
-      );
-      // _messages.add(ChatBubbleWidget(
-      //   isAi: false,
-      //   title: 'for testing',
-      //   message: messageTOrespons,
-      // ));
-      if (response.text != null && response.text!.isNotEmpty) {
+      // Generate a response from the AI model
+      try {
+        final response = await model.generateContent(
+          [Content.text(messageTOrespons)],
+        );
+        if (response.text != null && response.text!.isNotEmpty) {
+          setState(() {
+            _messages.add(ChatBubbleWidget(
+              isAi: true,
+              title: 'AI Assistant',
+              message: response.text!,
+            ));
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _isLoading = false;
+            _messages.add(ChatBubbleWidget(
+              isAi: true,
+              title: 'AI Assistant',
+              message: "I was unable to generate an answer",
+            ));
+          });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          });
+        }
+      } catch (error) {
         setState(() {
+          _isLoading = false;
           _messages.add(ChatBubbleWidget(
             isAi: true,
             title: 'AI Assistant',
-            message: response.text!,
-          ));
-          _isLoading = false;
-        });
-        
-      } else {
-        setState(() {
-          _isLoading = false;
-          _messages.add(ChatBubbleWidget(
-            isAi: true,
-            title: 'AI Assistant',
-            message: "I was unable to generate an answer",
+            message: "An error occurred during API call",
           ));
         });
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -192,58 +204,40 @@ class _ChatbotWidgetState extends State<ChatbotWidget> with WidgetsBindingObserv
             curve: Curves.easeOut,
           );
         });
+        print("Error summarizing text: $error");
       }
-    } catch (error) {
-      setState(() {
-        _isLoading = false;
-        _messages.add(ChatBubbleWidget(
-          isAi: true,
-          title: 'AI Assistant',
-          message: "An error occurred during API call",
-        ));
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
-      print("Error summarizing text: $error");
     }
   }
-}
 
-void ScheduleBiAI(String s) async{
-  
-      String eventsToString() {
-        return _events.map((event) {
-          return 'Title: ${event.title}, '
-                'Color: ${event.color}, '
-                'Start Time: ${event.startTime}, '
-                'End Time: ${event.endTime}, '
-                'Description: ${event.description}, '
-                'Location: ${event.location}';
-        }).join('\n');
-      }
+  void ScheduleBiAI(String s) async {
+    String eventsToString() {
+      return _events.map((event) {
+        return 'Title: ${event.title}, '
+              'Color: ${event.color}, '
+              'Start Time: ${event.startTime}, '
+              'End Time: ${event.endTime}, '
+              'Description: ${event.description}, '
+              'Location: ${event.location}';
+      }).join('\n');
+    }
 
-  final response = await model.generateContent(
-    [Content.text("i want you to help me "+ s +"imagine that you are my personal assistant," + "Here are all of my events, parse the events to title, start time end time location as needed: " + eventsToString() +
-           "reply with short answers, avoid writing with * "+
-           //"and make dicisions based on the context of the event title if it makes sense to you,"+
-           "also make sure to take into consideration the prompt and event that i want to add, including suitable times based on common sense and suitable time based on events from the past only if the titles of the events make sense to you."+
-           "ignore clashing events, if the clash occurs look at the starting time if you need"+
-           "preferably answer should include the event title (new one not from previous eventsr) and the time of the event in readable format, and location, add small describtion if needed")],
-  );
-  setState(() {
-    _messages.add(ChatBubbleWidget(
-      isAi: true,
-      title: 'AI Assistant',
-      message: response.text!,
-    ));
-    _isLoading = false;
-  });
-}
+    final response = await model.generateContent(
+      [Content.text("i want you to help me " + s + "imagine that you are my personal assistant," + "Here are all of my events, parse the events to title, start time end time location as needed: " + eventsToString() +
+             "reply with short answers, avoid writing with * " +
+             "also make sure to take into consideration the prompt and event that i want to add, including suitable times based on common sense and suitable time based on events from the past only if the titles of the events make sense to you." +
+             "ignore clashing events, if the clash occurs look at the starting time if you need" +
+             "preferably answer should include the event title (new one not from previous eventsr) and the time of the event in readable format, and location, add small describtion if needed")],
+    );
+    setState(() {
+      _messages.add(ChatBubbleWidget(
+        isAi: true,
+        title: 'AI Assistant',
+        message: response.text!,
+      ));
+      _isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
