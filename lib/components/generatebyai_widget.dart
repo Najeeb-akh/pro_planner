@@ -1,17 +1,23 @@
 import 'package:pro_planner/index.dart';
-
+import 'package:firebase_auth/firebase_auth.dart'; // Import the User class
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:pro_planner/pages/mainpage/mainpage_widget.dart';
 import 'generatebyai_model.dart';
 export 'generatebyai_model.dart';
+import '../../state/user_state.dart';
+
 
 class GeneratebyaiWidget extends StatefulWidget {
-  /// add generate by ai button, make it with special color and greident border
-  const GeneratebyaiWidget({super.key});
+  /// Add generate by AI button, make it with special color and gradient border
+  const GeneratebyaiWidget({super.key, required this.user, required this.events});
+
+  final User? user;
+  final List<Event> events;
 
   @override
   State<GeneratebyaiWidget> createState() => _GeneratebyaiWidgetState();
@@ -35,7 +41,6 @@ class _GeneratebyaiWidgetState extends State<GeneratebyaiWidget> {
   @override
   void dispose() {
     _model.maybeDispose();
-
     super.dispose();
   }
 
@@ -68,12 +73,15 @@ class _GeneratebyaiWidgetState extends State<GeneratebyaiWidget> {
             ),
             child: FFButtonWidget(
               onPressed: () {
-                 Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatbotWidget(),
-                        ),
-                      );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatbotWidget(
+                      user: widget.user,
+                      events: widget.events,
+                    ),
+                  ),
+                );
               },
               text: 'Generate With AI',
               icon: Icon(

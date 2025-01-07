@@ -1,3 +1,5 @@
+import 'package:pro_planner/index.dart';
+
 import '/components/drawer_widget.dart';
 import '/components/generatebyai_widget.dart';
 import '/components/menu_widget.dart';
@@ -14,6 +16,8 @@ import 'package:firebase_database/firebase_database.dart';
 import '../../theme/theme_notifier.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../state/user_state.dart';
 
 
 class Event {
@@ -143,7 +147,9 @@ class MainpageWidget extends StatefulWidget {
   /// A focus on readability and usability, with sufficient spacing between
   /// elements.
   /// add padding from the buttom
-  const MainpageWidget({super.key});
+  final User? user;
+
+  const MainpageWidget({super.key, this.user});
 
   @override
   State<MainpageWidget> createState() => _MainpageWidgetState();
@@ -153,13 +159,13 @@ class MainpageWidget extends StatefulWidget {
 class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObserver {
   late MainpageModel _model;
   bool isDarkMode = false;
-  //should be changed to the user id from the firebase auth
-  final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
-  int globalEventCounter = 20; // Global counter
-
+  final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref().child('users');
+  late int globalEventCounter; // Global counter
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  String _userName = ''; // Add this line
 
-// support for greetings based on time of the day
+  //should be changed to the user id from the firebase auth
+  // support for greetings based on time of the day
   
 
   DateTime _selectedDate = DateTime.now();
@@ -203,19 +209,21 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
     if(startTime.toIso8601String() == "" || endTime.toIso8601String() == "")
       return 5;
 
-
-
-    // Save the new event in Firebase Realtime Database
-    final DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child('users/userId1/events');
-      final eventId = 'eventId${globalEventCounter++}';
-    databaseReference.child('/$eventId').set({
-      'title': eventName,
-      'color': select_color.value,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
-      'location': location,
-      'description': _eventDescription,
-    });
+      // Save the new event in Firebase Realtime Database
+      final userId = widget.user?.uid;
+      if (userId != null) {
+        final DatabaseReference databaseReference = FirebaseDatabase.instance.ref().child('users/$userId/events');
+        final eventId = 'eventId${globalEventCounter++}';
+        databaseReference.child(eventId).set({
+        'title': eventName,
+        'color': select_color.value,
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
+        'location': location,
+        'description': description,
+        'date': startTime.toIso8601String(), // Save the date as well
+        });
+      }
 
     return 10;
   }
@@ -275,18 +283,46 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
   void initState() {
     super.initState();
     _model = createModel(context, () => MainpageModel());
+    globalEventCounter = widget.user?.uid.hashCode ?? 0; // Initialize globalEventCounter
     _fetchEvents();
+    _fetchUserName(); // Add this line
     _selectedDate = DateTime.now(); // Select the current date when the app is loaded
     WidgetsBinding.instance.addObserver(this);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchEvents(); // Fetch events whenever the widget is rebuilt
+  }
+
+  void _fetchUserName() async {
+    final userId = widget.user?.uid;
+    if (userId != null) {
+      final snapshot = await _databaseReference.child(userId).child('name').get();
+      if (snapshot.exists) {
+        setState(() {
+          Provider.of<UserState>(context, listen: false).setUserName(snapshot.value as String);
+        });
+      }
+    }
+  }
   void _fetchEvents() {
-    _databaseReference.onValue.listen((event) {
-      final data = event.snapshot.value as Map<dynamic, dynamic>;
-      setState(() {
-        _events = data.values.map((e) => Event.fromMap(e)).toList();
+    final userId = widget.user?.uid;
+    if (userId != null) {
+      _databaseReference.child(userId).child('events').onValue.listen((event) {
+        final data = event.snapshot.value;
+        if (data != null && data is Map<dynamic, dynamic>) {
+          setState(() {
+            _events = data.values.map((e) => Event.fromMap(e)).toList();
+          });
+        } else {
+          setState(() {
+            _events = [];
+          });
+        }
       });
-    });
+    }
   }
 
   List<Event> _events = [];
@@ -299,6 +335,10 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
              eventDate.month == now.month &&
              eventDate.day == now.day;
     }).toList();
+  }
+
+  List<Event> _getAllEvents() {
+    return _events;
   }
 
   String _formatTime(String time) {
@@ -392,6 +432,8 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
   var event_counter = 0;
   @override
   Widget build(BuildContext context) {
+    final userName = Provider.of<UserState>(context).userName;
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -438,7 +480,7 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
             child: wrapWithModel(
               model: _model.drawerModel,
               updateCallback: () => safeSetState(() {}),
-              child: DrawerWidget(),
+              child: DrawerWidget(user: widget.user), // Pass the user to the DrawerWidget
             ),
           ),
         ),
@@ -475,7 +517,7 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
                   iconSize: 24,
                 ),
                     Text(
-                      _getGreeting(),
+                      _getGreeting(userName),
                       style:
                           FlutterFlowTheme.of(context).headlineMedium.override(
                                 fontFamily: 'Inter Tight',
@@ -489,7 +531,20 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
               ),
             ),
             actions: [
-             
+              IconButton(
+                icon: Icon(Icons.chat),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatbotWidget(
+                        user: widget.user,
+                        events: _getAllEvents(), // Pass the events to the ChatbotWidget
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
             centerTitle: false,
             toolbarHeight: MediaQuery.sizeOf(context).height * 0.2,
@@ -662,7 +717,10 @@ class _MainpageWidgetState extends State<MainpageWidget> with WidgetsBindingObse
                           wrapWithModel(
                             model: _model.generatebyaiModel,
                             updateCallback: () => safeSetState(() {}),
-                            child: GeneratebyaiWidget(),
+                            child: GeneratebyaiWidget(
+                              user: widget.user,
+                              events: _getAllEvents(), // Pass the events to the GeneratebyaiWidget
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsetsDirectional.fromSTEB(
@@ -1173,14 +1231,14 @@ class _WeeklyCalendarWidgetState extends State<WeeklyCalendarWidget> {
   }
 }
 
-String _getGreeting() {
+String _getGreeting(String userName) {
     final hour = DateTime.now().hour;
     if (hour < 12) {
-      return 'Good Morning, Najeeb';
+      return 'Good Morning, $userName';
     } else if (hour < 18) {
-      return 'Good Afternoon, Najeeb';
+      return 'Good Afternoon, $userName';
     } else {
-      return 'Good Evening, Najeeb';
+      return 'Good Evening, $userName';
     }
   }
   
